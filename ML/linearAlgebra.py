@@ -1,3 +1,17 @@
+# ---------------------
+# The exceptions definition
+class MatrixFormatError(Exception):
+  def __init__(self, msg = "Invalid matrix format"):
+    super().__init__(msg)
+
+
+# --------------------
+# helper functions
+# def luDecomposition(inputMatrix):
+  
+
+
+# --------------------
 def matrixDotProduct(a: list[list[int|float]], b: list[int|float]) -> list[int|float]:
   # This function takes in a matrix 'a' and a vector 'b', and returns the result of the matrix-vector multiplication. -1 is returned if encounter invalid inputs
   if len(b) != len(a[0]):
@@ -15,3 +29,5 @@ def transposeMatrix(a: list[list[int|float]]) -> list[list[int|float]]:
   # then the output of the function will be:
   # [[1,4],[2,5],[3,6]]
   return [[a[i][j] for i in range(len(a))] for j in range(len(a[0]))]
+
+# def getMatrixDeterminant(inputMatrix):
