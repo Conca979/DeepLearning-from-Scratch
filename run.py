@@ -1708,26 +1708,31 @@ def longestBalanced(nums: List[int]) -> int:
 
 #print([longestBalanced([15634,46946,17078,30747,11127,8734,34499,40653,69290,58196,59189,56437,62193,32120,27951,13810,18249,56184,13632,62142,22005,53022,7646,20459,69629,61727,58260,68267,23311,25461,59165,43969,68956,67035,29041,49997,43759,67083,10816,55527,16304,2808,7590,37814,40137,3366,71407,40267,62902,45332,55681,48864,64191,13856,25594,50714,41507,45931,15778,37523,30090,19141,60623,25036,34743,8611,60783,41444,2012,16841,61705,64154,9302,64601,5060,54224,54179,58568,65371,42090,24509,51791,8024,22459,22880,40109,71815,13525,36507,23858,63518,16087,54501,9894,21935,10884,70488,59708,7560,49077,33641,40109,22320,34285,16926,65912,15054,71166,34398,53472,67492,57202,36698,26486,14855,62050,53039,26264,29600,17548,64755,36430,22401,37778,30335,25061,64221,42431,34821,8401,34200,55539,4698,8553,26720,36335,61536,67866,9718,61787,33770,19887,69223,37792,38458,68774,60529,69679,5010,45098,10741,42222,48397,40795,46588,28645,43910,25233,48711,42584,6526,52948,68149,20110,60468,48395,50760,50031,52699,11252,66136,62403,46617,21753,46072,61626,63986,25977,1013,48138,67805,14462,14780,35262,48151,61807,44182,43909,59102,15572,46369,35328,20094,69825,69466,17869,38007,69566,40524,43931,14345,59494,26982,2251,10429,26922,7972,7787,57306,40449,11896,50577,66200,66185,27493,63952,60438,69607,40903,24008,53578,33890,49433,30553,60612,26496,49501,25129,21052,9476,593,56888,52830,21418,53550,61195,70284,58698,12824,14110,66236,38414,6480,47018,1788,66511,13175,27445,27467,32970,21245,20161,66692,41282,17232,31938,5208,41678,53878,60186,19244,29640,48313,52298,4587,24579,30078,18651])])
 
+def longestBalanced(s: str) -> int:
+#   You are given a string s consisting of lowercase English letters.
+# A substring of s is called balanced if all distinct characters in the substring appear the same number of times.
+# Return the length of the longest balanced substring of s.
+  n = len(s)
+  size = n
+  if size == 1: return 1
+  while size >= 2:
+    t = collections.Counter(s[0:size])
+    print(t)
+    for i in range(n - size):
+      if len(collections.Counter(t.values())) == 1:
+        return size
+      else:
+        t[s[i]] -= 1
+        if t[s[i]] == 0:
+          del t[s[i]]
+        if s[i + size] in t:
+          t[s[i + size]] += 1
+        else:
+          t[s[i + size]] = 1
+    
+    if len(collections.Counter(t.values())) == 1:
+      return size
+    else:
+      size -= 1
 
-  
-
-
-def reshape_matrix(a: list[list[int|float]], new_shape: tuple[int, int]) -> list[list[int|float]]:
-	#Write your code here and return a python list after reshaping by using numpy's tolist() method
-	try:
-		return np.reshape(a, new_shape).tolist()
-	except Exception as e:
-		return []
-
-def calculate_matrix_mean(matrix: list[list[float]], mode: str) -> list[float]:
-  if mode == 'column':
-    return [sum([matrix[j][i] for j in range(len(matrix))])/len(matrix) for i in range(len(matrix[0]))]
-  else:
-    return [sum([matrix[i][j] for j in range(len(matrix[0]))])/len(matrix[0]) for i in range(len(matrix))]
-  
-def scalar_multiply(matrix: list[list[int|float]], scalar: int|float) -> list[list[int|float]]:
-  for row in range(len(matrix)):
-    for col in range(len(matrix[0])):
-      matrix[row][col] *= scalar
-
-  return matrix
+print(longestBalanced('f'))
