@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
+import math
 
-class basicLinearRegression:
+class basicLinearRegression: # gradinet decsent approach
   def __init__(self, inputTrainingSet, inputParameters = None, epsilon = 0.001, learningRate = 0.001):
     if isinstance(inputTrainingSet, str):
       with open(inputTrainingSet) as f:
@@ -39,7 +40,7 @@ class basicLinearRegression:
       result += (self.trainingSet[sampleIndex][-1] - self.predict(sampleIndex))*(1 if featureIndex == 0 else self.trainingSet[sampleIndex][featureIndex - 1])
 
     return result*(self.learningRate / m)
-  
+
   def fitModel(self):
     currentCost = self.computeMse()
 
@@ -77,8 +78,113 @@ class basicLinearRegression:
     plt.title('Prediction Accurary')
     plt.show()
 
+class basicLogisticRegression: # grandient ascent approach
+  def __init__(self, dataSet, weights = None, epsilon = 0.00001,  learningRate = 0.001):
+    self.learningRate = learningRate
+    self.epsilon = epsilon
+    self.iterationCount = 0
+    #
+    if isinstance(dataSet, str):
+      with open(dataSet) as f:
+        self.dataSet = [[float(val) for val in line.split()] for line in f]
+    self.sizeDataSet = len(self.dataSet)
+    #
+    if weights is None:
+      self.weights = [0]*len(self.dataSet[0])
+    else:
+      self.weights = weights
+    #
 
-model = basicLinearRegression('data.txt', epsilon = 0.00000000000001, learningRate = 0.0001)
+  def predict(self, sampleIndex):
+    result = self.weights[0]
+    for i in range(len(self.weights) - 1):
+      result += self.weights[i + 1]*self.dataSet[sampleIndex][i]
+    
+    return 1 / (1 + math.e**(-result))
+  
+  def computeLogLikelihood(self):
+    llh = 0 # log Likelihood
+    for sampleIndex in range(self.sizeDataSet):
+      llh += self.dataSet[sampleIndex][-1]*math.log(self.predict(sampleIndex)) + (1 - self.dataSet[sampleIndex][-1])*math.log(1 - self.predict(sampleIndex))
+
+    return llh
+  
+  def computeGradient(self, freatureIndex):
+    grd = 0
+    
+    for sampleIndex in range(self.sizeDataSet):
+      grd += (self.dataSet[sampleIndex][-1] - self.predict(sampleIndex))*(1 if freatureIndex == 0 else self.dataSet[sampleIndex][freatureIndex - 1])
+
+    return self.learningRate*grd
+  
+  def fitModel(self):
+    curLlh = self.computeLogLikelihood()
+
+    with open('iterations.txt', mode = 'w') as f: pass
+    with open('iterations.txt', mode = 'a') as f:
+      f.write(f"{self.weights}, {curLlh}, 0 \n")
+      while True:
+        #
+        updateWeights = self.weights.copy()
+        #
+        self.iterationCount += 1
+        for freatureIndex in range(len(self.weights)):
+          updateWeights[freatureIndex] += self.computeGradient(freatureIndex) 
+
+        self.weights = updateWeights
+        newLlh = self.computeLogLikelihood()
+        
+        change = (curLlh - newLlh) / curLlh
+        f.write(f"{self.weights}, {curLlh}, {change} \n")
+        if change < self.epsilon:
+          break
+        else:
+          curLlh = newLlh
+
+  def showTestTable(self):
+    with open('data2TestSet.txt') as f:
+      testSet = [[float(val) for val in line.split()] for line in f]
+
+    self.dataSet = testSet
+    predictedProbabilities = [self.predict(sampleIndex) for sampleIndex in range(len(testSet))]
+    predictedLabels = [(1 if val >= 0.5 else 0) for val in predictedProbabilities]
+    tableData = []
+    for i in range(len(testSet)):
+        isCorrect = "Yes" if predictedLabels[i] == testSet[i][-1] else "No"
+        tableData.append([
+            testSet[i][0], 
+            testSet[i][1], 
+            round(predictedProbabilities[i], 7), 
+            predictedLabels[i], 
+            isCorrect
+        ])
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.axis('tight')
+    ax.axis('off')
+
+    columns = ("Feature (x)", "Actual Label", "Probability", "Predicted", "Correct?")
+    table = ax.table(cellText=tableData, colLabels=columns, loc='center', cellLoc='center')
+
+    # Color coding the "Correct?" column
+    for i in range(len(tableData)):
+        cell = table[(i + 1, 4)] # +1 because of header row
+        if tableData[i][4] == "No":
+            cell.set_facecolor("#ffcccc") # Light red for errors
+        else:
+            cell.set_facecolor("#ccffcc") # Light green for success
+
+    plt.title("Model Verification Table", fontsize=14, pad=20)
+    plt.show()
+    # print([True if (1 if predictedProbability[i] >= 0.5 else 0) == testSet[i][-1] else False for i in range(len(testSet))])
+
+
+# model = basicLinearRegression('data.txt', epsilon = 0.000000000001, learningRate = 0.001)
+# model.fitModel()
+# print(model.iterationCount)
+# model.showModel()
+
+model = basicLogisticRegression('data2.txt', epsilon= 0.00001, learningRate= 0.001)
 model.fitModel()
 print(model.iterationCount)
-model.showModel()
+model.showTestTable()
