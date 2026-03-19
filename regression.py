@@ -285,18 +285,3 @@ class basicLogisticRegression: # grandient ascent approach
     plt.title("Model Verification Table", fontsize=14, pad=20)
     plt.show()
     # print([True if (1 if predictedProbability[i] >= 0.5 else 0) == testSet[i][-1] else False for i in range(len(testSet))])
-
-
-model = basicLinearRegression('Advertising.csv', 
-                              epsilon= 0.00000001, 
-                              learningRate= 0.0001, 
-                              parsingData= (',', True, True))
-model.fitModel(log= True)
-print(model.iterationCount)
-model.showModel()
-print(model._modelEvalutaion())
-
-# model = basicLogisticRegression('data2.txt', epsilon= 0.00001, learningRate= 0.001)
-# model.fitModel()
-# print(model.iterationCount)
-# model.showTestTable()
