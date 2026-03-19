@@ -1735,4 +1735,13 @@ def longestBalanced(s: str) -> int:
     else:
       size -= 1
 
-print(longestBalanced('f'))
+with open('marks.txt') as f:
+  a = [[float(val) for val in line.split(',')] for line in f]
+random.shuffle(a)
+
+with open('marksTestSet.txt', mode= 'w') as f:
+  for data in a[int(len(a)*0.8):]:
+    f.write(','.join(map(str, data)) + '\n')
+with open('marksTrainingSet.txt', mode= 'w') as f:
+  for data in a[:int(len(a)*0.8)]:
+    f.write(','.join(map(str, data)) + '\n')
