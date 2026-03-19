@@ -1,17 +1,9 @@
 import matplotlib.pyplot as plt
 import math
+import random
 
-class basicLinearRegression: # gradinet decsent approach
-  def __init__(self, 
-               inputDataSet, 
-               initWeights = None, 
-               epsilon = 0.000001, 
-               learningRate = 0.001, 
-               parsingData = (None,None,None),  # [0]: comma/pip/semicolumn/space-separated value
-                                                # [1]: header included in file
-                                                # [2]: indexing column included
-               featureScaling = True,
-               outComeScaling = True):
+class modelSetup:
+  def __init__(self, inputDataSet, initWeights, epsilon, learningRate, parsingData, featureScaling):
     # get dataSet
     if isinstance(inputDataSet, str):
       with open(inputDataSet) as f:
@@ -32,24 +24,9 @@ class basicLinearRegression: # gradinet decsent approach
     else:
       self.weights = initWeights
     # Scaling data to avoid overFlow
-    self.outComeScaling = False
     self.featureScaling = False
     if featureScaling:
       self.featureScaling = self._featureScaling()
-    if outComeScaling:
-      self.outComeScaling = self._outComeScaling()
-
-  def _outComeScaling(self): # Z-score standardization
-    # new scaled feature = (oldFeature - theMean) / theStandardDeviation
-    mean = sum([self.dataSet[i][-1] / self.sizeDataSet for i in range(self.sizeDataSet)])
-    stdDev = (sum([((self.dataSet[i][-1] - mean)**2) / self.sizeDataSet for i in range(self.sizeDataSet)]))**0.5
-    for i in range(self.sizeDataSet):
-      if stdDev > 0:
-        self.dataSet[i][-1] = (self.dataSet[i][-1] - mean) / stdDev
-      else:
-        self.dataSet[i][-1] = 0
-
-    return mean, stdDev
 
   def _featureScaling(self): # Z-score standardization
     # new scaled feature = (oldFeature - theMean) / theStandardDeviation
@@ -65,6 +42,36 @@ class basicLinearRegression: # gradinet decsent approach
           self.dataSet[i][featureIndex] = 0
 
     return scalingParams
+
+class basicLinearRegression(modelSetup): # gradinet decsent approach
+  def __init__(self, 
+               inputDataSet, 
+               initWeights= None, 
+               epsilon= 0.000001, 
+               learningRate= 0.001, 
+               parsingData= (None,None,None),  # [0]: comma/pip/semicolumn/space-separated value
+                                                # [1]: header included in file
+                                                # [2]: indexing column included
+               featureScaling= True,
+               outComeScaling= True):
+    super().__init__(inputDataSet, initWeights, epsilon, learningRate, parsingData, featureScaling)
+    # scaling outPut/outCome also. But why? Because we are doing the arithmetic computation
+    # and the limitation is the overflow lol
+    self.outComeScaling = False
+    if outComeScaling:
+      self.outComeScaling = self._outComeScaling()
+
+  def _outComeScaling(self): # Z-score standardization
+    # new scaled feature = (oldFeature - theMean) / theStandardDeviation
+    mean = sum([self.dataSet[i][-1] / self.sizeDataSet for i in range(self.sizeDataSet)])
+    stdDev = (sum([((self.dataSet[i][-1] - mean)**2) / self.sizeDataSet for i in range(self.sizeDataSet)]))**0.5
+    for i in range(self.sizeDataSet):
+      if stdDev > 0:
+        self.dataSet[i][-1] = (self.dataSet[i][-1] - mean) / stdDev
+      else:
+        self.dataSet[i][-1] = 0
+
+    return mean, stdDev
   
   def _modelEvalutaion(self): # R-square evaluation
     actualMean = sum([val[-1] for val in self.dataSet]) / self.sizeDataSet
@@ -186,26 +193,45 @@ class basicLinearRegression: # gradinet decsent approach
 
     plt.show()
 
-class basicLogisticRegression: # grandient ascent approach
-  def __init__(self, dataSet, weights = None, epsilon = 0.00001,  learningRate = 0.001):
-    self.learningRate = learningRate
-    self.epsilon = epsilon
-    self.iterationCount = 0
-    #
-    if isinstance(dataSet, str):
-      with open(dataSet) as f:
-        self.dataSet = [[float(val) for val in line.split()] for line in f]
-    self.sizeDataSet = len(self.dataSet)
-    #
-    if weights is None:
-      self.weights = [0]*len(self.dataSet[0])
+class basicLogisticRegression(modelSetup): # grandient ascent approach
+  def __init__(self, 
+               inputDataSet, 
+               initWeights= None, 
+               epsilon= 0.000001, 
+               learningRate= 0.001, 
+               parsingData= (None,None,None),  # [0]: comma/pip/semicolumn/space-separated value
+                                                # [1]: header included in file
+                                                # [2]: indexing column included
+               featureScaling= True):
+    # preparing the dataSet
+    if isinstance(inputDataSet, str):
+      with open(inputDataSet) as f:
+        if parsingData[1]: next(f) # skip the header line
+        offSet = 1 if parsingData[2] else 0 # skip the index column
+        a = [[float(val) for val in line.split(parsingData[0])[offSet:]] for line in f]
+      random.shuffle(a)
+      # split dataSet into "80 training / 20 testing"
+      self.trainingSet = a[:int(len(a)*0.8)]
+      self.testSet = a[int(len(a)*0.8):]
     else:
-      self.weights = weights
-    #
+      self.trainingSet = inputDataSet[:int(len(inputDataSet)*0.8)]
+      self.testSet = inputDataSet[int(len(inputDataSet)*0.8):]
+    self.parsingData = parsingData
+    super().__init__(self.trainingSet, initWeights, epsilon, learningRate, parsingData, featureScaling)
+
+  def predict(self, inputData):
+    result = self.weights[0]
+    for i in range(self.featureCount):
+      if self.featureScaling:
+        mean, stdDev = self.featureScaling[i]
+        inputData[i] = (inputData[i] - mean) / stdDev      
+      result += self.weights[i + 1]*inputData[i]
+
+    return 1 / (1 + math.e**(-result))
 
   def _predict(self, sampleIndex):
     result = self.weights[0]
-    for i in range(len(self.weights) - 1):
+    for i in range(self.featureCount):
       result += self.weights[i + 1]*self.dataSet[sampleIndex][i]
     
     return 1 / (1 + math.e**(-result))
@@ -219,49 +245,65 @@ class basicLogisticRegression: # grandient ascent approach
   
   def computeGradient(self, freatureIndex):
     grd = 0
-    
     for sampleIndex in range(self.sizeDataSet):
       grd += (self.dataSet[sampleIndex][-1] - self._predict(sampleIndex))*(1 if freatureIndex == 0 else self.dataSet[sampleIndex][freatureIndex - 1])
 
     return self.learningRate*grd
   
-  def fitModel(self):
+  def fitModel(self, log= None):
     curLlh = self.computeLogLikelihood()
+    self.costHistory = [math.e**curLlh]
+    if log:
+      with open('iterations.txt', mode = 'w') as f: pass
+      with open('iterations.txt', mode = 'a') as f:
+        f.write(f"""["Weights"], current log likelihood, shifting in Llh \n {self.weights}, {curLlh}, 0 \n""")
+        while True:
+          updateWeights = self.weights.copy()
+          self.iterationCount += 1
+          for freatureIndex in range(len(self.weights)):
+            updateWeights[freatureIndex] += self.computeGradient(freatureIndex) 
 
-    with open('iterations.txt', mode = 'w') as f: pass
-    with open('iterations.txt', mode = 'a') as f:
-      f.write(f"""["Weights"], current log likelihood, shifting in Llh \n {self.weights}, {curLlh}, 0 \n""")
+          self.weights = updateWeights
+          newLlh = self.computeLogLikelihood()
+          self.costHistory.append(math.e**newLlh)
+          change = abs((newLlh - curLlh) / curLlh)
+          f.write(f"{self.weights}, {curLlh}, {change} \n")
+          if change < self.epsilon:
+            break
+          else:
+            curLlh = newLlh
+    else:
       while True:
-        #
         updateWeights = self.weights.copy()
-        #
         self.iterationCount += 1
         for freatureIndex in range(len(self.weights)):
           updateWeights[freatureIndex] += self.computeGradient(freatureIndex) 
 
         self.weights = updateWeights
         newLlh = self.computeLogLikelihood()
-        
+        self.costHistory.append(math.e**newLlh)
         change = abs((newLlh - curLlh) / curLlh)
-        f.write(f"{self.weights}, {curLlh}, {change} \n")
         if change < self.epsilon:
           break
         else:
           curLlh = newLlh
 
-  def showTestTable(self):
-    with open('data2TestSet.txt') as f:
-      testSet = [[float(val) for val in line.split()] for line in f]
+  def showCostTrend(self):
+    plt.xlabel('Iteration (Log scale)')
+    plt.ylabel('Cost - MSE')
+    plt.title('Cost vs iteration')
+    # if self.iterationCount >= 1000: plt.xscale('log')
+    plt.plot(self.costHistory)
+    plt.show()
 
-    self.dataSet = testSet
-    predictedProbabilities = [self._predict(sampleIndex) for sampleIndex in range(len(testSet))]
+  def showTestTable(self):
+    predictedProbabilities = [self.predict(inputData) for inputData in self.testSet]
     predictedLabels = [(1 if val >= 0.5 else 0) for val in predictedProbabilities]
     tableData = []
-    for i in range(len(testSet)):
-      isCorrect = "Yes" if predictedLabels[i] == testSet[i][-1] else "No"
+    for i in range(len(self.testSet)):
+      isCorrect = "Yes" if predictedLabels[i] == self.testSet[i][-1] else "No"
       tableData.append([
-        testSet[i][0], 
-        testSet[i][1], 
+        self.testSet[i][-1], 
         round(predictedProbabilities[i], 7), 
         predictedLabels[i], 
         isCorrect
@@ -271,16 +313,16 @@ class basicLogisticRegression: # grandient ascent approach
     ax.axis('tight')
     ax.axis('off')
 
-    columns = ("Feature (x)", "Actual Label", "Probability", "Predicted", "Correct?")
+    columns = ("Actual Label", "Probability", "Predicted", "Correct?")
     table = ax.table(cellText=tableData, colLabels=columns, loc='center', cellLoc='center')
 
-    # Color coding for the "Correct?" column
+    # color coding for the "Correct?" column
     for i in range(len(tableData)):
-        cell = table[(i + 1, 4)] # +1 because of header row
-        if tableData[i][4] == "No":
-            cell.set_facecolor("#ffcccc") # Light red for errors
+        cell = table[(i + 1, 3)] # +1 because of header row
+        if tableData[i][3] == "No":
+            cell.set_facecolor("#ffcccc") # red for errors
         else:
-            cell.set_facecolor("#ccffcc") # Light green for success
+            cell.set_facecolor("#ccffcc") # green for success
 
     plt.title("Model Verification Table", fontsize=14, pad=20)
     plt.show()
