@@ -5,13 +5,8 @@ import random
 class modelSetup:
   def __init__(self, inputDataSet, initWeights, epsilon, learningRate, parsingData, featureScaling):
     # get dataSet
-    if isinstance(inputDataSet, str):
-      with open(inputDataSet) as f:
-        if parsingData[1]: next(f) # skip the header line
-        offSet = 1 if parsingData[2] else 0 # skip the index column
-        self.dataSet = [[float(val) for val in line.split(parsingData[0])[offSet:]] for line in f]
-    else:
-      self.dataSet = inputDataSet
+    self.parsingData = parsingData
+    self._dataPreparation(inputDataSet)
     # model initialization
     self.sizeDataSet = len(self.dataSet)
     self.featureCount = len(self.dataSet[0]) - 1
@@ -42,6 +37,21 @@ class modelSetup:
           self.dataSet[i][featureIndex] = 0
 
     return scalingParams
+
+  def _dataPreparation(self, inputDataSet):
+    # preparing the dataSet
+    if isinstance(inputDataSet, str):
+      with open(inputDataSet) as f:
+        if self.parsingData[1]: next(f) # skip the header line
+        offSet = 1 if self.parsingData[2] else 0 # skip the index column
+        a = [[float(val) for val in line.split(self.parsingData[0])[offSet:]] for line in f]
+      random.shuffle(a)
+    # split dataSet into "80 training / 20 testing"
+      self.dataSet = a[:int(len(a)*0.8)]
+      self.testSet = a[int(len(a)*0.8):]
+    else:
+      self.dataSet = inputDataSet[:int(len(inputDataSet)*0.8)]
+      self.testSet = inputDataSet[int(len(inputDataSet)*0.8):]
 
 class basicLinearRegression(modelSetup): # gradinet decsent approach
   def __init__(self, 
@@ -164,7 +174,7 @@ class basicLinearRegression(modelSetup): # gradinet decsent approach
         else:
           currentCost = updateCost
 
-  def showModel(self, graph = None): # graphType = "Prediction Accurary" by default, "Cost vs Iteration" for any passed value
+  def showModel(self, graph= None, log= True): # graphType = "Prediction Accurary" by default, "Cost vs Iteration" for any passed value
     if graph is None:
       predictedValue = [self._predict(sampleIndex) for sampleIndex in range(self.sizeDataSet)]
       actualValue = [ys[-1] for ys in self.dataSet]
@@ -185,10 +195,10 @@ class basicLinearRegression(modelSetup): # gradinet decsent approach
       #
       plt.title('Prediction Accurary')
     else:
-      plt.xlabel('Iteration (Log scale)')
+      plt.xlabel(f'Iterations {'Log scalse' if log else ''}')
       plt.ylabel('Cost - MSE')
       plt.title('Cost vs iteration')
-      if self.iterationCount >= 1000: plt.xscale('log')
+      if log: plt.xscale('log')
       plt.plot(self.costHistory)
 
     plt.show()
@@ -203,21 +213,7 @@ class basicLogisticRegression(modelSetup): # grandient ascent approach
                                                 # [1]: header included in file
                                                 # [2]: indexing column included
                featureScaling= True):
-    # preparing the dataSet
-    if isinstance(inputDataSet, str):
-      with open(inputDataSet) as f:
-        if parsingData[1]: next(f) # skip the header line
-        offSet = 1 if parsingData[2] else 0 # skip the index column
-        a = [[float(val) for val in line.split(parsingData[0])[offSet:]] for line in f]
-      random.shuffle(a)
-    # split dataSet into "80 training / 20 testing"
-      self.trainingSet = a[:int(len(a)*0.8)]
-      self.testSet = a[int(len(a)*0.8):]
-    else:
-      self.trainingSet = inputDataSet[:int(len(inputDataSet)*0.8)]
-      self.testSet = inputDataSet[int(len(inputDataSet)*0.8):]
-    self.parsingData = parsingData
-    super().__init__(self.trainingSet, initWeights, epsilon, learningRate, parsingData, featureScaling)
+    super().__init__(inputDataSet, initWeights, epsilon, learningRate, parsingData, featureScaling)
 
   def predict(self, inputData):
     result = self.weights[0]
@@ -288,11 +284,11 @@ class basicLogisticRegression(modelSetup): # grandient ascent approach
         else:
           curLlh = newLlh
 
-  def showCostTrend(self):
-    plt.xlabel('Iteration (Log scale)')
+  def showCostTrend(self, log= True):
+    plt.xlabel(f'Iterations {'Log scalse' if log else ''}')
     plt.ylabel('Cost - MSE')
     plt.title('Cost vs iteration')
-    # if self.iterationCount >= 1000: plt.xscale('log')
+    if log: plt.xscale('log')
     plt.plot(self.costHistory)
     plt.show()
 
