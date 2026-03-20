@@ -1,5 +1,7 @@
 .vscode/
 __pycache__/
 test.py
+*.png
 *.txt
 *.csv
+run.py

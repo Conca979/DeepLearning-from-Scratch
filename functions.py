@@ -1,6 +1,33 @@
+# from collections import deque, ChainMap, Counter
+# import functions
+from random import randint
+# import matplotlib.pyplot as plt 
+import math, statistics
+# import sys
+import time
+import os
+import random
+from itertools import combinations
+import collections
+from collections import Counter
+# import copy
+# import heapq
+import numpy as np
+# from sklearn.linear_model import LinearRegression
+# from sklearn.cluster import KMeans
+from typing import List, Optional
 import os
 import random
 import time
+
+#-------
+class TreeNode:
+  def __init__(self):
+    return
+  
+class ListNode:
+  def __init__(self):
+    return
 
 def isArmstrong(digits):
   return digits == sum([int(str(digits)[i])**len(str(digits)) for i in range(len(str(digits)))])
@@ -188,6 +215,1266 @@ def searchRange(nums, target): # wrong!!
       while r < l - 1 and n[r + 1] == t: r = r + 1
       break
   return [lf, r]
+
+def longestBalanced(s: str) -> int:
+#   You are given a string s consisting of lowercase English letters.
+# A substring of s is called balanced if all distinct characters in the substring appear the same number of times.
+# Return the length of the longest balanced substring of s.
+  n = len(s)
+  size = n
+  if size == 1: return 1
+  while size >= 2:
+    t = collections.Counter(s[0:size])
+    print(t)
+    for i in range(n - size):
+      if len(collections.Counter(t.values())) == 1:
+        return size
+      else:
+        t[s[i]] -= 1
+        if t[s[i]] == 0:
+          del t[s[i]]
+        if s[i + size] in t:
+          t[s[i + size]] += 1
+        else:
+          t[s[i + size]] = 1
+    
+    if len(collections.Counter(t.values())) == 1:
+      return size
+    else:
+      size -= 1
+
+def splitArray(nums: List[int]) -> int:
+  def insertNewPrime(p):
+    newPrime = p[-1] + 2
+    while True:
+      for i in p:
+        if i*i > newPrime:
+          p.append(newPrime)
+          return
+        else:
+          if newPrime % i != 0:
+            continue
+          else:
+            break
+      
+      newPrime += 1
+          
+  primes = [2,3]
+  _index = 0
+
+  if len(nums) <= 2:
+    sumA = 0
+  else:
+    sumA = nums[2]
+  sumB = 0
+  while _index < len(nums):
+    if _index == primes[-1]:
+      sumA += nums[_index]
+      insertNewPrime(primes)
+    else:
+      if _index != 2:
+        sumB += nums[_index]
+
+    _index += 1
+
+  return abs(sumA - sumB)
+
+def minCost(m: int, n: int, waitCost: List[List[int]]) -> int:
+  t = waitCost[m - 1][n - 1]
+  waitCost[0][0] = 1
+  for row in range(m):
+    for col in range(n):
+      if row == 0 and col == 0: continue
+      if row == 0:
+        waitCost[row][col] += waitCost[row][col - 1] + (row + 1)*(col + 1)
+        continue
+      if col == 0:
+        waitCost[row][col] += waitCost[row - 1][col] + (row + 1)*(col + 1)
+        continue
+      #
+      waitCost[row][col] += min(waitCost[row][col - 1], waitCost[row - 1][col]) + (row + 1)*(col + 1)
+  
+  return waitCost[m - 1][n - 1] - t
+
+def maximumSetSize(nums1: List[int], nums2: List[int]) -> int:
+  nums1DelCount = nums2DelCount = int(len(nums1))/2
+  countNums1 = Counter(nums1)
+  countNums2 = Counter(nums2)
+  #
+  for i in countNums1:
+    if countNums1[i] > 1:
+      t = countNums1[i] - 1
+      if t >= nums1DelCount:
+        countNums1[i] -= nums1DelCount
+        nums1DelCount = 0
+        break
+      else:
+        nums1DelCount -= countNums2[i]
+        countNums1[i] = 1
+  for i in countNums2:
+    if countNums2[i] > 1:
+      t = countNums2[i] - 1
+      if t > nums2DelCount:
+        countNums2[i] -= nums2DelCount
+        nums2DelCount = 0
+        break
+      else:
+        nums2DelCount -= countNums2[i]
+        countNums2[i] = 1
+  #
+  if nums1DelCount <= 0 and nums2DelCount <= 0:
+    return len(Counter(nums1 + nums2))
+  #
+  for i in countNums1.copy():
+    if i in countNums2:
+      if countNums1[i] > nums1DelCount:
+        nums1DelCount = 0
+        break
+      else:
+        nums1DelCount -= countNums1[i]
+        del countNums1[i]
+    else:
+      continue
+  
+  for i in countNums2.copy():
+    if i in countNums1:
+      if countNums2[i] > nums2DelCount:
+        nums2DelCount = 0
+        break
+      else:
+        nums2DelCount -= countNums2[i]
+        del countNums2[i]
+  
+  return int(len(Counter(countNums1 + countNums2)) - nums1DelCount - nums2DelCount)
+
+def areaOfMaxDiagonal(dimensions: List[List[int]]) -> int:
+  maxArea = 1
+  maxTempDia = 1
+  for rectangle in dimensions:
+    t = rectangle[0]*rectangle[0] + rectangle[1]*rectangle[1]
+    print(math.sqrt(t), rectangle[0]*rectangle[1])
+    if t == maxTempDia:
+      t = rectangle[0]*rectangle[1]
+      if t > maxArea:
+        maxArea = t
+    elif t > maxTempDia:
+      maxTempDia = t
+      maxArea = rectangle[0]*rectangle[1]
+  
+  return maxArea
+
+def findWords(board: List[List[str]], words: List[str]) -> List[str]: 
+  class Trie:
+    def __init__(self, words=None):
+      self.root = []
+      self.wordCount = 0
+      if words is not None:
+        for word in words:
+          self.add(word)
+
+    class Node:
+      def __init__(self, val):
+        self.val = val
+        self.nexts = []
+        self.endOfWord = None
+
+    def add(self, inputWord):
+      self.wordCount += 1
+      #
+      for node in self.root:
+        if node.val == inputWord[0]:
+          cur = node
+          break
+      else:
+        cur = self.Node(inputWord[0])
+        self.root.append(cur)
+      #
+      if len(inputWord) == 1:
+        cur.endOfWord = inputWord
+        return
+      # For longer words, walk/create child nodes
+      for ch in inputWord[1:]:
+        for n in cur.nexts:
+          if n.val == ch:
+            cur = n
+            break
+        else:
+          new = self.Node(ch)
+          cur.nexts.append(new)
+          cur = new
+      cur.endOfWord = inputWord
+
+    def allWords(self):
+      result = []
+      def _run_(node):
+        if node.endOfWord:
+          result.append(node.endOfWord)
+        for n in node.nexts:
+          _run_(n)
+      for node in self.root:
+        _run_(node)
+      return result
+
+  result = set()
+
+  def _run_(r, c, trie, cNode, preMoves = None, board = board):
+    if c == len(board[0]) or c < 0 or r == len(board) or r < 0:
+      return
+    #
+    if preMoves is None: preMoves = set()
+    if (r, c) not in preMoves:
+      if board[r][c] != cNode.val:
+        return
+      else:
+        if cNode.endOfWord and cNode.endOfWord not in result:
+            result.add(cNode.endOfWord)
+        #
+        preMoves.add((r, c))
+        for n in cNode.nexts:
+          if trie.wordCount == 0: break
+          #
+          _run_(r, c + 1, trie, n, preMoves.copy())
+          _run_(r + 1, c, trie, n, preMoves.copy())
+          _run_(r, c - 1, trie, n, preMoves.copy())
+          _run_(r - 1, c, trie, n, preMoves.copy())
+    else:
+      return False
+        
+  # set up trie
+  trie = Trie(words)
+  #
+  
+  for row in range(len(board)):
+    for col in range(len(board[0])):
+      for node in trie.root: # loop 
+        if node.val == board[row][col]:
+          _run_(row, col, trie, node)
+          continue
+  
+  return list(result)
+
+def merge(intervals: List[List[int]]) -> List[List[int]]:
+  f = [_ for i in sorted(intervals) for _ in i]
+  i = 1
+
+  while i < len(f) - 2:
+    if f[i] >= f[i + 1]:
+      if f[i] >= f[i + 2]:
+        del f[i + 1: i + 3]
+      else: del f[i], f[i]
+    else: i += 2
+
+  return [[f[i], f[i + 1]] for i in range(0, len(f), 2)]
+
+def subsets(nums: List[int]) -> List[List[int]]:
+
+  result = []
+  def _run_(subSet):
+    subSet.sort()
+    if subSet not in result:
+      result.append(subSet.copy())
+    for i in nums:
+      if i not in subSet:
+        subSet.append(i)
+        _run_(subSet)
+        subSet.pop()
+
+  _run_([])
+  # result = [[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [3]]
+  sorted(result, key = lambda x: len(x))
+  return result
+
+def sumOfLeftLeaves(root: Optional[TreeNode]) -> int:
+  result = []
+  def _run(node, isLeft, result):
+    if node.left is None and node.right is None:
+      if isLeft:
+        result[0] += node.val
+    else:
+      if node.left: 
+        _run(node.left, True)
+      if node.right:
+        _run(node.right, False)
+
+  _run(root, False)
+  return result[0]
+
+def longestPalindrome(s: str) -> int:
+  existOddValue = False
+  hashTable = {}
+  for i in s: # s: string
+    if i in hashTable:
+      hashTable[i] += 1
+    else:
+      hashTable[i] = 1
+  #
+  if existOddValue:
+    result = 1
+  else:
+    result = 0
+  #
+  for s in hashTable.values():
+    result += (s - s%2)
+    if s % 2 == 1:
+      existOddValue = True
+  return result + (1 if existOddValue else 0)
+
+def removeElements(head: Optional[ListNode], val: int) -> Optional[ListNode]:
+  dum = ListNode(-1, head)
+  t = dum
+  while t.next:
+    if t.next.val == val:
+      t.next = t.next.next
+    t = t.next
+  return dum.next
+
+def setZeroes(matrix: List[List[int]]) -> None:
+  s = []
+  for i in range(len(matrix)):
+    for j in range(len(matrix[0])):
+      if matrix[i][j] == 0: s.append([i,j])
+  #
+  for p in s:
+    for i in range(len(matrix)):
+      matrix[i][p[1]] = 0
+    for i in range(len(matrix[0])):
+      matrix[p[0]][i] = 0
+
+def partition(head: Optional[ListNode], x: int) -> Optional[ListNode]:
+  # class ListNode:
+  #     def __init__(self, val=0, next=None):
+  #         self.val = val
+  #         self.next = next
+  # y would be the value that greater than or equal to x
+  y = x
+  nodesLessthanX = []
+  nodesGreaterThanX = []
+
+  t = head
+  foundY = False
+  while t:
+    if not foundY and t.val > y:
+      y = t.val
+      foundY = True
+    t = t.next
+  #
+  t = head
+  while t:
+    if t.val < x:
+      nodesLessthanX.append(t.val)
+    else:
+      nodesGreaterThanX.append(t.val)
+    t = t.next
+
+  newHead = ListNode()
+  t = newHead
+  for i in (nodesLessthanX + nodesGreaterThanX):
+    t.next = ListNode(i)
+  return newHead.next
+
+def divide(dividend: int, divisor: int) -> int:
+  if dividend == -2147483648 and divisor == -1:
+    return 2147483647
+  def run(dividend, divisor, quotient):
+    shiftAmount = 0
+    while divisor << shiftAmount <= dividend:
+      shiftAmount += 1
+    #
+    shiftAmount -= 1
+    if shiftAmount == -1:
+      return quotient
+    elif shiftAmount == 0:
+      return quotient + 1
+    else:
+      dividend -= divisor << shiftAmount
+      quotient += 2 << shiftAmount - 1
+      return run(dividend, divisor, quotient)
+
+  result = run(abs(dividend), abs(divisor), 0)
+  if (dividend >= 0 and divisor >= 0) or (dividend < 0 and divisor < 0):
+    return result
+  else:
+    return -result
+
+def uniquePathsWithObstacles(obstacleGrid: List[List[int]]) -> int:
+  for i in range(len(obstacleGrid)):
+    for j in range(len(obstacleGrid[0])):
+      if obstacleGrid[i][j] == 1:
+        obstacleGrid[i][j] = 'o'
+  #
+  for row in obstacleGrid:
+    print(row)
+  #
+  if obstacleGrid[0][0] != 'o' and obstacleGrid[-1][-1] != 'o':
+    obstacleGrid[0][0] = 1
+  else:
+    return 0
+  #
+  for i in range(len(obstacleGrid)):
+    for j in range(len(obstacleGrid[0])):
+      if obstacleGrid[i][j] != 'o':
+        up = obstacleGrid[i - 1][j] if i - 1 >= 0 else 0
+        down = obstacleGrid[i][j - 1] if j - 1 >= 0 else 0
+        print(obstacleGrid[i][j], up, down)
+        obstacleGrid[i][j] += (up if up != 'o' else 0) + (down if down != 'o' else 0)
+  #
+  for row in obstacleGrid:
+    print(row)
+  #
+  return obstacleGrid[-1][-1]
+
+def uniquePaths(m: int, n: int) -> int:
+  matrix = [[0 for _ in range(m)] for _ in range(n)]
+  for i in range(n):
+    for j in range(m):
+      if i == 0 or j == 0:
+        matrix[i][j] = 1
+      else:
+        matrix[i][j] = matrix[i - 1][j] + matrix[i][j - 1]
+  return matrix[n - 1][m - 1]        
+
+def sortColors(nums):
+  """
+  Do not return anything, modify nums in-place instead.
+  """
+  l = len(nums)
+  if l == 1: return
+  elif l == 2:
+    if nums[0] > nums[1]:
+      nums[0], nums[1] = nums[1], nums[0]
+    else: return
+  #
+  def _swap_(i1, i2):
+    nums[i1], nums[i2] = nums[i2], nums[i1]
+  #
+  for _ in range(l - 2):
+    if nums[_] > nums[_ + 1]: _swap_(_, _ + 1)
+    if nums[_ + 1] > nums[_ + 2]: _swap_(_ + 1, _ + 2)
+    if nums[_] > nums[_ + 1]: _swap_(_, _ + 1)
+
+def minDepth(root):
+  if not root: return 0
+  def _run_(d = 1, node = root):
+    if (node.left == None and node.right == None):
+      return d
+    elif node.left and node.right:
+      return min(_run_(d + 1, node.left), _run_(d + 1, node.right))
+    if node.left:
+      return _run_(d + 1, node.left)
+    else:
+      return _run_(d + 1, node.right)
+  
+  return _run_()
+
+def preorderTraversal(root):
+  rs = []
+
+  def _run_(node = root):
+    if not node: return
+    rs.append(node.val)
+    if not node.left:
+      _run_(node.left)
+    if not node.right:
+      _run_(node.right)
+  _run_()
+  return rs
+
+def majorityElement(nums):
+  d = {}
+  l = len(nums) 
+  for _ in nums:
+    if _ not in d: d[_] = 1
+    else:
+      d[_] += 1
+      if d[_] >= l/2:
+        return d[_]
+      
+def uniquePaths(m, n):
+  i = [0]
+  def _run_(r = 1, c = 1):
+    if r == m and c == n:
+      i[0] += 1
+      return
+    if r != m and c != n:
+      _run_(r + 1, c)
+      _run_(r, c + 1)
+      return
+    if r == m:
+      _run_(r, c + 1)
+    if c == n:
+      _run_(r + 1, c)
+
+  _run_()
+  return i[0]
+
+def threeSum(nums):
+  nums.sort()
+  l = len(nums)
+  rs = []
+
+  i = 0
+  while i < l:
+    if i >= 1:
+      while i < l - 1 and nums[i] == nums[i - 1]:
+        i += 1
+    lf = i + 1
+    r = l - 1
+    while lf < r:
+      s = nums[lf] + nums[r]
+      if s == -nums[i]:
+        rs.append([nums[i], nums[lf], nums[r]])
+        lf += 1
+        while lf < l and nums[lf] == nums[lf - 1]: lf += 1
+        r -= 1
+      elif s < -nums[i]:
+        lf += 1
+        while lf < l and nums[lf] == nums[lf - 1]: lf += 1
+      else: # s > -nums[i]
+        r -= 1
+    i += 1
+  return rs
+
+def threeSumClosest(nums, target):
+  nLen = len(nums)
+  nums.sort()
+  print(nums)
+  result = nums[0] + nums[1] + nums[2]
+
+  index = 0
+  while index < nLen:
+    if index >= 1:
+      while index < nLen and nums[index] == nums[index - 1]:
+        index += 1
+    #
+    # 2 pointers
+    left, right = index + 1, nLen - 1
+    while left < right:
+      print(index, left, right)
+      sm = nums[left] + nums[right] + nums[index]
+      if sm == target:
+        return sm
+      else:
+        if abs(target - sm) < abs(target - result):
+          result = sm
+      if sm < target:
+        left += 1
+        while left < nLen and nums[left] == nums[left - 1]:
+          left += 1
+      else:
+        right -= 1
+    #
+    index += 1
+  return result
+
+def multiply(num1, num2):
+  n1, n2 = 0, 0
+  l1, l2 = len(num1), len(num2)
+  i1, i2 = 0, 0
+  
+  for i in range(min(l1, l2)):
+    n1 = n1*10 + int(num1[i1])
+    n2 = n2*10 + int(num2[i2])
+    i1 += 1
+    i2 += 1
+  while i1 != l1:
+    n1 = n1*10 + int(num1[i1])
+    i1 += 1
+  while i2 != l2:
+    n2 = n2*10 + int(num2[i2])
+  return f"{n1*n2}"
+
+def setZeroes(matrix):
+  """
+  Do not return anything, modify matrix in-place instead.
+  """
+  nRow = len(matrix)
+  nCol = len(matrix[0])
+  for row in range(nRow):
+    for column in range(nCol):
+      if matrix[row][column] == 0:
+        matrix[0][column] = 0
+        matrix[row][0] = 0
+
+  for row in range(nRow):
+    print(matrix[row])
+
+  for col in range(nCol):
+    if matrix[0][col] == 0:
+      for i in range(nRow):
+        matrix[i][col] = 0
+
+  for row in range(nRow):
+    if matrix[row][0] == 0:
+      for i in range(nCol):
+        matrix[row][i] = 0
+
+  print("------")
+  for row in range(nRow):
+    print(matrix[row])
+
+def isMatch(s, p): # have not completed yet
+  def _run_(s = s, p = p, sIndex = len(s) - 1, pIndex = len(p) - 1):
+    while True:
+      print(sIndex, pIndex)
+      if pIndex < 0 and sIndex < 0: return True
+      if pIndex < 0 and sIndex >= 0: return False
+      if pIndex >= 0 and sIndex < 0:
+        if pIndex % 2 == 0: return False
+        for i in range(1, pIndex + 1, 2):
+          if p[i] == "*":
+            continue
+          else: return False
+        else: return True
+      #
+      if p[pIndex] == '.':
+        sIndex -= 1
+        pIndex -= 1
+        continue
+      if p[pIndex] == '*':
+        pIndex -= 1
+        if p[pIndex] == '.':
+          if pIndex == 0: return True
+          else:
+            pIndex -= 1
+            while p[pIndex] == '*':
+              pIndex -= 2
+            for i in range(sIndex + 1):
+              if s[i] == p[pIndex]:
+                if _run_(s, p, i, pIndex):
+                  return True
+                else: continue
+            else:
+              return False
+        else:
+          while sIndex >= 0 and s[sIndex] == p[pIndex]:
+            sIndex -= 1
+            if _run_(s, p, sIndex, pIndex - 1):
+              return True
+            else: continue
+        #
+        pIndex -= 1
+        continue
+      if p[pIndex] == s[sIndex]:
+        sIndex -= 1
+        pIndex -= 1
+        continue
+      else:
+        return False
+  return _run_()
+      
+def fourSum(nums, target):
+  if len(nums) <= 3: return []
+  nums.sort()
+  print(nums)
+  result = []
+  i1 = 0
+  i2 = 1
+
+  while i1 < len(nums) - 2:
+    if i1 >= 1:
+      while i1 < (len(nums) - 2) and nums[i1] == nums[i1 - 1]:
+        i1 += 1
+    #
+    i2 = i1 + 1
+    while i2 < len(nums) - 1:
+      if i2 >= 2 and i2 != i1 + 1:
+        while i2 < (len(nums) - 2) and nums[i2] == nums[i2 - 1]:
+          i2 += 1
+      #
+      l, r = i2 + 1, len(nums) - 1
+      while l < r:
+        fSum = nums[i1] + nums[i2] + nums[l] + nums[r]
+        if fSum == target:
+          result.append([nums[i1], nums[i2], nums[l], nums[r]])
+          l += 1
+          while l < len(nums) - 1 and nums[l] == nums[l - 1]:
+            l += 1
+          r -= 1
+          continue
+        elif fSum < target:
+          l += 1
+          while l < len(nums) - 1 and nums[l] == nums[l - 1]:
+            l += 1
+          continue
+        else: # fSum > target
+          r -= 1
+        #
+      i2 += 1
+    i1 += 1
+
+  return result
+
+def findSubstring(s, words):
+  result = []
+  wordsLen = len(words)
+  strLen = len(words[0])
+  words = Counter(words)
+
+  for offSet in range(strLen):
+    for i in range(offSet, len(s), strLen):
+      t = dict()
+      a = i
+      while i < a + strLen*wordsLen:
+        subStr = s[i: i + strLen]
+        if subStr in words:
+          if (subStr in t):
+            if (t[subStr] < words[subStr]):
+              t[subStr] += 1
+            else:
+              break
+          else:
+            t[subStr] = 1
+        else:
+          break
+        #
+        i += strLen
+      else:
+        result.append(a)
+  
+  # for offSet in range(strLen):
+  #   for i in range(offSet, len(s), strLen):
+  #     t = dict()
+  #     a = i
+  #     while i < a + strLen*wordsLen:
+  #       subStr = s[i: i + strLen]
+  #       if subStr in words:
+  #         if (subStr in t):
+  #           if (t[subStr] < words[subStr]):
+  #             t[subStr] += 1
+  #           else:
+  #             break
+  #         else:
+  #           t[subStr] = 1
+  #       else:
+  #         break
+  #       #
+  #       i += strLen
+  #     else:
+  #       result.append(a)
+
+  return result
+
+  # result = []
+  # #
+  # allPermutation = set()
+  # for case in permutations(range(len(words)), len(words)):
+  #   concatenated = ''
+  #   for w in case:
+  #     concatenated += words[w]
+  #   allPermutation.add(concatenated)
+  # #
+  # print(list(allPermutation))
+  # for i in range(len(s)):
+  #   if s[i: i + len(words[0])] in words:
+  #     if s[i: i + len(words)*len(words[0])] in allPermutation:
+  #       result.append(i)
+
+  # return result
+
+def canReach(arr, start):
+
+  def _run_(arr = arr, a = set(range(len(arr))), iDex = start):
+    if iDex < 0 or iDex >= len(arr): return False
+    if arr[iDex] == 0: return True
+    if iDex not in a:
+      return False
+    # have not traveled to index iDex yet
+    a.remove(iDex)
+    return _run_(iDex = (iDex + arr[iDex])) or _run_(iDex = (iDex - arr[iDex]))
+  
+  return _run_()
+  
+def getIntersectionNode(headA, headB):
+  # Definition for singly-linked list.
+  # class ListNode:
+  #     def __init__(self, x):
+  #         self.val = x
+  #         self.next = None
+  NumberOfListA = 0
+  NumberOfListB = 0
+  tailNodeA = headA
+  tailNodeB = headB
+
+  while tailNodeA.next and tailNodeB.next:
+    NumberOfListA += 1
+    NumberOfListB += 1
+    tailNodeA = tailNodeA.next
+    tailNodeB = tailNodeB.next
+  while tailNodeA.next:
+    tailNodeA = tailNodeA.next
+  while tailNodeB.next:
+    tailNodeB = tailNodeB.next
+  
+  #
+  nodesFromtail = 0
+  while tailNodeA and tailNodeB:
+    nodesFromtail += 1
+    if tailNodeA != tailNodeB:
+      return tailNodeB
+
+def romanToInt(s):
+  d = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}
+
+  result = 0
+  for i in range(len(s) - 1):
+    if d[s[i]] < d[s[i + 1]]:
+      result -= d[s[i]]
+    else:
+      result += d[s[i]]
+  result += d[s[-1]]
+  return result
+
+def binaryTreePaths(root):
+  # class TreeNode:
+  #     def __init__(self, val=0, left=None, right=None):
+  #         self.val = val
+  #         self.left = left
+  #         self.right = right
+  result = []
+
+  def _runPath_(path = '', node = root):
+    if not node:
+      result.append(path)
+      return
+    #
+    if node == root:
+      path += node.val
+    else:
+      path += f'->{node.val}'
+    #
+    if node.left:
+      _runPath_(path, node.left)
+    if node.right:
+      _runPath_(path, node.right)
+  
+  _runPath_()
+  return result
+  
+def findWords1(board, words):
+  def _run_(board, word, c, r, wordIndex = 0, preMoves = None):
+    if wordIndex == len(word):
+      return True
+    #
+    if c == len(board[0]) or c < 0 or r == len(board) or r < 0:
+      return False
+    #
+    if preMoves is None: preMoves = set()
+    if (r, c) not in preMoves:
+      if board[r][c] != word[wordIndex]:
+        return False
+      else:
+        preMoves.add((r, c))
+        if _run_(board, word, c + 1, r, wordIndex + 1, preMoves):
+          return True
+        preMoves.add((r, c))
+        if _run_(board, word, c, r + 1, wordIndex + 1, preMoves):
+          return True
+        preMoves.add((r, c))
+        if _run_(board, word, c - 1, r, wordIndex + 1, preMoves):
+          return True
+        preMoves.add((r, c))
+        if _run_(board, word, c, r - 1, wordIndex + 1, preMoves):
+          return True
+        else:
+          preMoves.remove((r, c))
+          return False
+    else:
+      return False
+    
+  words = set(words)
+  result = []
+  found = set()
+    
+  for row in range(len(board)):
+    for col in range(len(board)):
+      for word in words:
+        if board[row][col] == word[0]:
+          if _run_(board, word, col, row): # if word is in board
+            found.add(word)
+            result.append(word)
+      #
+      words -= found
+      found.clear()
+
+  return result
+
+def countNodes(root):
+  def _run_(node = root):
+    if not node:
+      return -1
+    else:
+      return 2 + _run_(node.left) + _run_(node.right)
+    
+  return 1 + _run_()
+
+def invertTree(root):
+  # Given the root of a binary tree, invert the tree, and return its root.
+  def _run_(node = root):
+    if not node:
+      return
+    else:
+      node.left, node.right = node.right, node.left
+      _run_(node.left)
+      _run_(node.right)
+  
+  _run_()
+
+def addDigits(num):
+  while num > 9:
+    s = 0
+    while num != 0:
+      print(num)
+      s += num % 10
+      num //= 10
+    num = s
+  return num
+
+def isUgly(n):
+  if n < 0:
+    return False
+  #
+  factor = 2
+  while factor <= n:
+    if factor > 5: return False
+    #
+    if n % factor == 0:
+      n /= factor
+    else:
+      factor += 1
+  return True
+
+def pathSum(root, targetSum):
+  count = [0]
+
+  def _run_(node, targetSum, count, path = None):
+    if path is None: path = []
+    for i in range(len(path)):
+      path[i] += node.val
+      if path[i] == targetSum:
+        count[1] += 1
+    #
+    path.append(node.val)
+    if node.val == targetSum:
+      count[1] += 1
+    #
+    if node.left:
+      _run_(node.left, targetSum, count, path)
+    if node.right:
+      _run_(node.left, targetSum, count, path)
+    #
+    path.pop()
+    for i in range(len(path)):
+      path[i] -= node.val
+
+  if root:
+    _run_(root, targetSum, count)
+    return count[0]
+  else:
+    return count[0]
+  
+def isIsomorphic(s, t):
+  # constraint: len(s) == len(t)
+  mapping = {}
+  mapping2 = {}
+
+  for i in range(len(s)):
+    if s[i] in mapping:
+      if mapping[s[i]] == t[i]:
+        continue
+      else:
+        return False
+    else:
+      if t[i] in mapping2:
+        return False
+      else:
+        mapping2[t[i]] = s[i]
+        mapping[s[i]] = t[i]
+  
+  return True
+
+def reverseList(head):
+
+  def _run_(oldNode, newNode):
+    if oldNode:
+      t = ListNode(oldNode.val)
+      t.next = newNode
+      oldNode = oldNode.next
+      #
+      return _run_(oldNode, t)
+    else:
+      return newNode
+
+  return _run_(head, None)
+
+def findTheDifference(s, t):
+  result = 0
+  for c in (s + t):
+    result ^= c
+  return result
+
+def predictTheWinner(nums):
+
+  def _run_(p1Score, p2Score, nums):
+    if len(nums) == 0:
+      print(p1Score, p2Score)
+      return True if p1Score >= p2Score else False
+    else:
+      return _run_(p1Score + nums[0], p2Score + nums[-1], nums[1:-1]) or _run_(p1Score + nums[-1], p2Score + nums[0], nums[1:-1])
+
+  return _run_(0, 0, nums)
+
+def isSubsequence(s, t):
+  sIndex = 0
+  tIndex = 0
+
+  while sIndex < len(s) and tIndex < len(t):
+    if s[sIndex] == t[tIndex]:
+      print(s[sIndex], t[tIndex])
+      sIndex += 1
+    tIndex += 1
+  #
+  return True if sIndex == len(s) else False
+
+def isBalanced(root):
+
+  def _run_(node):
+    if not node:
+      return 0
+    #
+    a, b = 0, 0
+    if node.left:
+      a = 1 + _run_(node.left)
+    if node.right:
+      b = 1 + _run_(node.right)
+    return max(a, b)
+  
+  def _check_(node):
+    if not node:
+      return True
+    else:
+      if abs(_run_(node.left) - _run_(node.right)) <= 1:
+        return _check_(node.left) or _check_(node.right)
+      else:
+        return False
+      
+  return _check_(root)
+
+def getIntersectionNode(headA, headB):
+  nodeA = set()
+  nodeB = set()
+
+  while headA and headB:
+    if headA not in nodeB:
+      nodeA.add(headA)
+    else:
+      return headA
+    #
+    if headB not in nodeA:
+      nodeB.add(headB)
+    else:
+      return headB
+    #
+    headA = headA.next
+    headB = headB.next
+
+  while headA:
+    if headA not in nodeB:
+      headA = headA.next
+    else:
+      return headA
+    
+  while headB:
+    if headB not in nodeA:
+      headB = headB.next
+    else:
+      return headB
+    
+def rotate(nums, k):
+  """
+  Do not return anything, modify nums in-place instead.
+  """
+  k = k % len(nums)
+  partA = nums[:len(nums) - k]
+  partB = nums[len(nums) - k:]
+  for i in range(len(partB)):
+    nums[i] = partB[i]
+  for i in range(len(partA)):
+    nums[len(partB) + i] = partA[i]
+  return nums
+
+def combinationSum2(candidates, target):
+  #   Given a collection of candidate numbers (candidates) and a target number (target), find all unique combinations in candidates where the candidate numbers sum to target.
+
+  # Each number in candidates may only be used once in the combination.
+  candidates.sort()
+  print(candidates, target, '\n------------')
+  result = []
+
+  def _run_(_index, subCandidates, _sum = 0):
+    if _sum == target:
+      result.append(subCandidates)
+      return False
+    if _sum > target:
+      return False  
+    #
+    for i in range(_index + 1, len(candidates)):
+      subCandidates.append(candidates[i])
+      if not _run_(i, subCandidates, _sum + candidates[i]):
+        subCandidates.pop()
+        break
+      subCandidates.pop()
+    else:
+      return True
+    
+    return False
+  
+  for i in range(len(candidates)):
+    _run_(i, [candidates[i]], candidates[i])
+
+  return result
+
+def spiralMatrix(self, m: int, n: int, head: Optional[ListNode]) -> List[List[int]]:
+  top = 0
+  right = n - 1
+  bottom = m - 1
+  left = 0
+
+  result = [[-1 for _ in range(n)] for _ in range(m)]
+  while top <= bottom and left <= right:
+    # move right
+    for i in range(left, right + 1):
+      if head:
+        result[top][i] = head.val
+        head = head.next
+      else:
+        break
+    top += 1
+
+    # move down
+    for i in range(top, bottom + 1):
+      if head:
+        result[i][right] = head.val
+        head = head.next
+      else:
+        break
+    right -= 1
+
+    # move left
+    for i in range(right, left - 1, -1):
+      if head:
+        result[bottom][i] = head.val
+        head = head.next
+      else:
+        break
+    bottom -= 1
+
+    # move up
+    for i in range(bottom, top - 1, -1):
+      if head:
+        result[i][left] = head.val
+        head = head.next
+      else:
+        break
+    left += 1
+
+  return result
+
+def reverseBetween(self, head: Optional[ListNode], left: int, right: int) -> Optional[ListNode]:
+  # Definition for singly-linked list.
+  # class ListNode:
+  #     def __init__(self, val=0, next=None):
+  #         self.val = val
+  #         self.next = next
+  dummy = ListNode(next = head)
+
+def sortedListToBST(head: Optional[ListNode]) -> Optional[TreeNode]:
+  nodes = []
+  while head:
+    nodes.append(head.val)
+    head = head.next
+
+  if len(nodes) == 0: return None
+  def construct(l, r):
+    if l > r:
+      return None
+    else:
+      mid = (l + r) // 2
+      temp = ListNode(nodes[mid])
+      temp.left = construct(l, mid - 1)
+      temp.right = construct(mid + 1, r)
+      return temp
+  
+  mid = len(nodes) // 2
+  root = ListNode(nodes[mid])
+  root.left = construct(0, mid - 1)
+  root.right = construct(mid + 1, len(nodes) - 1)
+
+  return root
+
+def permute(nums: List[int]) -> List[List[int]]:
+  result = []
+
+  def _run_(p):
+    if len(p) == len(nums):
+      result.append(p)
+      return
+    #
+    for i in nums:
+      if i not in p:
+        p.append(i)
+        _run_(p)
+
+  _run_([])
+  return result
+
+def maxSubArray(self, nums: List[int]) -> int:
+  _max = int('-inf')
+  tMax = 0
+
+  for num in nums:
+    tMax += num
+
+    if tMax < num:
+      tMax = num
+
+    if tMax > _max:
+      _max = tMax
+
+  return _max
+
+def rotate(matrix) -> None:
+  """
+  Do not return anything, modify matrix in-place instead.
+  """
+  tMatrix = [[matrix[b][a] for b in range(len(matrix) - 1, -1, -1)] for a in range(len(matrix))]
+  for i in range(len(matrix)):
+    for j in range(len(matrix)):
+      matrix[i][j] = tMatrix[i][j]
+
+def rotateRight(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+  _count = 0
+  t = head
+  while t:
+    t = t.next
+    _count += 1
+  #
+  if _count <= 1 or k == 0: return head
+  k = k % _count
+  if k == 0: return head
+  #
+  newTail = head
+  for _ in range(_count - 1 - k):
+    newTail = newTail.next
+  newHead = newTail.next
+  #
+  newTail.next = None
+  oldTail = newHead
+  while oldTail.next:
+    oldTail = oldTail.next
+  oldTail.next = head
+  
+  return newHead
+
 
 #---------------
 

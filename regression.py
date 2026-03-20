@@ -56,7 +56,7 @@ class basicLinearRegression(modelSetup): # gradinet decsent approach
                outComeScaling= True):
     super().__init__(inputDataSet, initWeights, epsilon, learningRate, parsingData, featureScaling)
     # scaling outPut/outCome also. But why? Because we are doing the arithmetic computation
-    # and the limitation is the overflow lol
+    # and we have to deal with the overflow lol
     self.outComeScaling = False
     if outComeScaling:
       self.outComeScaling = self._outComeScaling()
@@ -210,7 +210,7 @@ class basicLogisticRegression(modelSetup): # grandient ascent approach
         offSet = 1 if parsingData[2] else 0 # skip the index column
         a = [[float(val) for val in line.split(parsingData[0])[offSet:]] for line in f]
       random.shuffle(a)
-      # split dataSet into "80 training / 20 testing"
+    # split dataSet into "80 training / 20 testing"
       self.trainingSet = a[:int(len(a)*0.8)]
       self.testSet = a[int(len(a)*0.8):]
     else:
