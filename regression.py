@@ -243,7 +243,7 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
         if log :f.write(f"{self.weights}, {updateCost}, {costShifting} \n")
       
       # Stopping condition
-      if (costShifting) < self.epsilon or updateCost > currentCost:
+      if (costShifting) < self.epsilon:
         self._modelEvaluaion()
         if saveModelState:
           self.saveModel(modelSaveFile= saveModelState, model= self)
@@ -314,7 +314,7 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
   
   def computeGradient(self, predictions):
     grd = np.dot(self.xTrain.T, predictions - self.yTrain)
-    return self.learningRate*grd
+    return self.learningRate*grd / self.yTrain.shape[0]
   
   def fitModel(self, log= None, saveModelState= None):
     predictions = self._predict()
@@ -348,7 +348,7 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
             f.write(f"{self.weights}, {curLlh}, {llhDif} \n")
 
       # Stopping condition
-      if llhDif < self.epsilon or newLlh < curLlh:
+      if llhDif < self.epsilon:
         self._modelEvaluation() # Return model evaluation result
         if saveModelState:
           self.saveModel(modelSaveFile= saveModelState, model= self)
