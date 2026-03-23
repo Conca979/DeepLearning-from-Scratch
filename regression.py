@@ -36,7 +36,7 @@ class PolyFeatureTransform:
     return newFeatures
 
 class ModelSetup:
-  def __init__(self, filePath, initWeights, epsilon, learningRate, parsingData, featureScaling, modelDegree, iterationLogTrigger):
+  def __init__(self, filePath, initWeights, epsilon, learningRate, parsingData, modelDegree, iterationLogTrigger):
     # Preparing dataSet
     self.filePath = filePath
     self.parsingData = parsingData
@@ -51,7 +51,6 @@ class ModelSetup:
 
     # Scaling data to avoid overFlow
     self.scalers = []
-    self.featureScaling = featureScaling
     self._featureScaling()
 
     # Model polynomial transformation
@@ -74,17 +73,16 @@ class ModelSetup:
 
   def _featureScaling(self, skipBias= False): # Z-score standardization
     # new scaled feature = (oldFeature - theMean) / theStandardDeviation
-    if self.featureScaling:
-      offSet = 1 if skipBias else 0
-      means = np.mean(self.xTrain[:, offSet:], axis= 0)
-      stdDevs = np.std(self.xTrain[:, offSet:], axis= 0)
-      
-      # Prevent division by 0
-      stdDevs[stdDevs == 0] = 1
+    offSet = 1 if skipBias else 0
+    means = np.mean(self.xTrain[:, offSet:], axis= 0)
+    stdDevs = np.std(self.xTrain[:, offSet:], axis= 0)
+    
+    # Prevent division by 0
+    stdDevs[stdDevs == 0] = 1
 
-      # Vectorize subtraction and division
-      self.xTrain[:, offSet:] = (self.xTrain[:, offSet:] - means) / stdDevs
-      self.scalers.append((means, stdDevs))
+    # Vectorize subtraction and division
+    self.xTrain[:, offSet:] = (self.xTrain[:, offSet:] - means) / stdDevs
+    self.scalers.append((means, stdDevs))
 
   def _dataPreparation(self, filePath):
     skipHeadLine = 1 if self.parsingData[1] else 0
@@ -143,11 +141,10 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
                parsingData= (None,None,None),   # [0]: delimiter
                                                 # [1]: header included in file
                                                 # [2]: indexing column included
-               featureScaling= True,
                outComeScaling= True,
                modelDegree= 1,
                iterationLogTrigger= 1000):
-    super().__init__(filePath, initWeights, epsilon, learningRate, parsingData, featureScaling, modelDegree, iterationLogTrigger)
+    super().__init__(filePath, initWeights, epsilon, learningRate, parsingData, modelDegree, iterationLogTrigger)
     # scaling outPut/outCome also. But why? Because we are doing the arithmetic computation
     # and we have to deal with the overflow lol
     self.outComeScaling = False
@@ -240,7 +237,9 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
       # Log
       if self.iterationCount % self.logTrigger == 0:
         print(f"||| {self.iterationCount}\t iterations passed; model'current cost: {currentCost}")
-        if log :f.write(f"{self.weights}, {updateCost}, {costShifting} \n")
+        if log :
+          with open(log, mode = 'a') as f:
+            f.write(f"{self.weights}, {updateCost}, {costShifting} \n")
       
       # Stopping condition
       if (costShifting) < self.epsilon:
@@ -282,10 +281,9 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
                parsingData= (None,None,None),   # [0]: delimiter
                                                 # [1]: header included in file
                                                 # [2]: indexing column included
-               featureScaling= True,
                modelDegree= 1,
                logEventTrigger= 1000):
-    super().__init__(filePath, initWeights, epsilon, learningRate, parsingData, featureScaling, modelDegree, logEventTrigger)
+    super().__init__(filePath, initWeights, epsilon, learningRate, parsingData, modelDegree, logEventTrigger)
 
   def predict(self, inputData):
     if len(inputData) == len(self.scalers[0][0]):
@@ -344,7 +342,7 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
       if self.iterationCount % self.logTrigger == 0:
         print(f"||| {self.iterationCount}\t iterations passed; model'current log-likelihood: {curLlh}")
         if log:
-          with open('data/iterations.txt', mode = 'a') as f:
+          with open(log, mode = 'a') as f:
             f.write(f"{self.weights}, {curLlh}, {llhDif} \n")
 
       # Stopping condition
