@@ -36,18 +36,12 @@ class PolyFeatureTransform:
     return newFeatures
 
 class ModelSetup:
-  def __init__(self, filePath, initWeights, epsilon, learningRate, parsingData, modelDegree, iterationLogTrigger):
-    # Preparing dataSet
-    self.filePath = filePath
-    self.parsingData = parsingData
-    self._dataPreparation(self.filePath)
-    self.sizeDataSet = self.dataSet.shape[0]
-
+  def __init__(self, trainingSet, testSet, initWeights, epsilon, learningRate, modelDegree, iterationLogTrigger):
     # Separate feature (X) and label/outCome (Y) early for easier matrix math
-    self.xTrain = self.dataSet[:, :-1]
-    self.yTrain = self.dataSet[:, -1]
-    self.xTest = self.testSet[:, :-1]
-    self.yTest = self.testSet[:, -1]
+    self.xTrain = trainingSet[:, :-1]
+    self.yTrain = trainingSet[:, -1]
+    self.xTest = testSet[:, :-1]
+    self.yTest = testSet[:, -1]
 
     # Scaling data to avoid overFlow
     self.scalers = []
@@ -83,18 +77,6 @@ class ModelSetup:
     # Vectorize subtraction and division
     self.xTrain[:, offSet:] = (self.xTrain[:, offSet:] - means) / stdDevs
     self.scalers.append((means, stdDevs))
-
-  def _dataPreparation(self, filePath):
-    skipHeadLine = 1 if self.parsingData[1] else 0
-    data = np.loadtxt(filePath,
-                      delimiter= self.parsingData[0],
-                      skiprows= skipHeadLine)
-    if self.parsingData[2]: data = data[:, 1:]
-    # Splitting data into 80/20 training/testting
-    np.random.shuffle(data) # Optional
-    splitIndex = int(data.shape[0]*0.8)
-    self.dataSet = data[:splitIndex]
-    self.testSet = data[splitIndex:]
 
   def polyTransform(self):
     self.polyEngine = PolyFeatureTransform(self.xTrain.shape[1], degree= self.degree)
@@ -133,18 +115,16 @@ class ModelSetup:
     print(f"Model'state saved to file path {modelSaveFile}")
 
 class BasicLinearRegression(ModelSetup): # gradient decsent approach
-  def __init__(self, 
-               filePath,
+  def __init__(self,
+               trainingSet,
+               testSet,
                initWeights= None, 
                epsilon= 0.000001, 
-               learningRate= 0.001, 
-               parsingData= (None,None,None),   # [0]: delimiter
-                                                # [1]: header included in file
-                                                # [2]: indexing column included
+               learningRate= 0.001,
                outComeScaling= True,
                modelDegree= 1,
-               iterationLogTrigger= 1000):
-    super().__init__(filePath, initWeights, epsilon, learningRate, parsingData, modelDegree, iterationLogTrigger)
+               iterationLogTrigger= 0):
+    super().__init__(trainingSet, testSet, initWeights, epsilon, learningRate, modelDegree, iterationLogTrigger)
     # scaling outPut/outCome also. But why? Because we are doing the arithmetic computation
     # and we have to deal with the overflow lol
     self.outComeScaling = False
@@ -165,12 +145,21 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
     # SumOfSquareErrors: proportional to the variance of the actual data
     sst = np.sum((self.yTrain - actualMean)**2)
 
-    # SumOfSquareOfResidualErrors: proportional to the variance of the prodicted data
+    # SumOfSquareOfResidualErrors: proportional to the variance of the predicted data
     sse = np.sum((self.yTrain - self._predict())**2)
     
     goodnessOfFit = (1 - (sse / sst))
     self.goodnessOfFit = goodnessOfFit
     return sst, sse, goodnessOfFit
+  
+  def modelValidating(self):
+    actualOutComes = self.yTest
+    predictedOutComes = np.array([self.predict(x) for x in self.xTest])
+    # print(actualOutComes, len(actualOutComes), predictedOutComes, len(predictedOutComes))
+    MSE = np.sum((actualOutComes - predictedOutComes)**2) / self.xTest.shape[0]
+
+    # Compute mean square error for validation
+    return MSE
 
   def predict(self, inputData):
     if len(inputData) == len(self.scalers[0][0]):
@@ -216,8 +205,8 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
 
     # User want to store model training states
     if log:
-      with open('data/iterations.txt', mode = 'w') as f: pass
-      with open('data/iterations.txt', mode = 'a') as f:
+      with open(log, mode = 'w') as f: pass
+      with open(log, mode = 'a') as f:
         f.write(f"[weights], current MSE, shifting in MSE \n")
         f.write(f"{self.weights}, {currentCost}, 0 \n")
 
@@ -235,7 +224,7 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
       costShifting = abs((currentCost - updateCost) / currentCost)
 
       # Log
-      if self.iterationCount % self.logTrigger == 0:
+      if self.logTrigger > 0 and self.iterationCount % self.logTrigger == 0:
         print(f"||| {self.iterationCount}\t iterations passed; model'current cost: {currentCost}")
         if log :
           with open(log, mode = 'a') as f:
@@ -274,16 +263,14 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
 
 class BasicLogisticRegression(ModelSetup): # grandient ascent approach
   def __init__(self, 
-               filePath, 
+               trainingSet,
+               testSet,
                initWeights= None, 
                epsilon= 0.000001, 
                learningRate= 0.001, 
-               parsingData= (None,None,None),   # [0]: delimiter
-                                                # [1]: header included in file
-                                                # [2]: indexing column included
                modelDegree= 1,
-               logEventTrigger= 1000):
-    super().__init__(filePath, initWeights, epsilon, learningRate, parsingData, modelDegree, logEventTrigger)
+               logEventTrigger= 0):
+    super().__init__(trainingSet, testSet, initWeights, epsilon, learningRate, modelDegree, logEventTrigger)
 
   def predict(self, inputData):
     if len(inputData) == len(self.scalers[0][0]):
@@ -321,8 +308,8 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
 
     # User want to store model tranining states
     if log:
-      with open('data/iterations.txt', mode = 'w') as f: pass
-      with open('data/iterations.txt', mode = 'a') as f:
+      with open(log, mode = 'w') as f: pass
+      with open(log, mode = 'a') as f:
         f.write(f"""["Weights"], current log likelihood, shifting in Llh \n {self.weights}, {curLlh}, 0 \n""")
 
     # Start training
@@ -339,7 +326,7 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
       llhDif = abs((newLlh - curLlh) / curLlh)
 
       # Log
-      if self.iterationCount % self.logTrigger == 0:
+      if self.logTrigger > 0 and self.iterationCount % self.logTrigger == 0:
         print(f"||| {self.iterationCount}\t iterations passed; model'current log-likelihood: {curLlh}")
         if log:
           with open(log, mode = 'a') as f:
