@@ -154,7 +154,7 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
   
   def modelValidating(self):
     actualOutComes = self.yTest
-    predictedOutComes = np.array([self.predict(x) for x in self.xTest])
+    predictedOutComes = np.apply_along_axis(self.predict, axis= 1, arr= self.xTest)
     # print(actualOutComes, len(actualOutComes), predictedOutComes, len(predictedOutComes))
     MSE = np.sum((actualOutComes - predictedOutComes)**2) / self.xTest.shape[0]
 
