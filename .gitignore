@@ -1,6 +1,8 @@
 .vscode/
 __pycache__/
 test.py
+neural_network.py
+functions.py
 *.png
 *.txt
 *.csv
