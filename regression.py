@@ -40,8 +40,9 @@ class ModelSetup:
     # Separate feature (X) and label/outCome (Y) early for easier matrix math
     self.xTrain = trainingSet[:, :-1]
     self.yTrain = trainingSet[:, -1]
-    self.xTest = testSet[:, :-1]
-    self.yTest = testSet[:, -1]
+    if testSet is not None:
+      self.xTest = testSet[:, :-1]
+      self.yTest = testSet[:, -1]
 
     # Scaling data to avoid overFlow
     self.scalers = []
@@ -117,7 +118,7 @@ class ModelSetup:
 class BasicLinearRegression(ModelSetup): # gradient decsent approach
   def __init__(self,
                trainingSet,
-               testSet,
+               testSet= None,
                initWeights= None, 
                epsilon= 0.000001, 
                learningRate= 0.001,
@@ -264,7 +265,7 @@ class BasicLinearRegression(ModelSetup): # gradient decsent approach
 class BasicLogisticRegression(ModelSetup): # grandient ascent approach
   def __init__(self, 
                trainingSet,
-               testSet,
+               testSet= None,
                initWeights= None, 
                epsilon= 0.000001, 
                learningRate= 0.001, 
@@ -388,7 +389,7 @@ class BasicLogisticRegression(ModelSetup): # grandient ascent approach
     plt.show()
 
   def showTestTable(self):
-    predictedProbabilities = [self.predict(inputData) for inputData in self.xTest]
+    predictedProbabilities = np.apply_along_axis(self.predict, axis= 1, arr= self.xTest)
     predictedLabels = [(1 if val >= 0.5 else 0) for val in predictedProbabilities]
     tableData = []
     for i in range(len(self.testSet)):
