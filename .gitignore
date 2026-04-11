@@ -3,6 +3,3 @@ __pycache__/
 test.py
 test2.py
 functions.py
-*.png
-*.txt
-*.csv
