@@ -154,7 +154,7 @@ class BasicNeuralNetwork:
     if test_set:
       self.x_test = test_set[0]
       self.y_test = test_set[1]
-    self._init_network()
+    self._init_network() 
 
   def _init_network(self) -> None:
     self.network_layers.append(self.InputLayer(input_layer= self.x_train))
