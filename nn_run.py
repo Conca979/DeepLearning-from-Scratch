@@ -4,13 +4,14 @@ import numpy as np
 
 # Data preprocessing
 data_set = np.loadtxt('data/Iris.csv', delimiter=',', dtype=str, skiprows=1, usecols= range(1,6))
-targets = list(set(data_set[:,-1]))
 x_train = data_set[:, :-1].astype(float)
 y_train = data_set[:, -1]
 
 # One-hot encoded
 unique, int_encoded = np.unique(y_train, return_inverse=True)
-y_train = np.eye(unique.shape[0])[int_encoded]
+one_hot_encoded = np.eye(unique.shape[0])
+y_train = one_hot_encoded[int_encoded]
+print(f"{unique}, \n{np.eye(unique.shape[0])}")
 
 #--------------------------------
 act = nn.ActivationFunction
@@ -33,7 +34,18 @@ model = nn.BasicNeuralNetwork(layers_init= model_inits,
                               leanring_rate= 0.01,
                               epsilon= 0.00001,
                               test_set= None,
-                              iteration_event_trigger= 1
+                              iteration_event_trigger= 1000
                               )
 
 model.fit_model()
+
+# --- Prediction ----
+predict_input = [[5.9,3.0,5.1,1.8],
+                 [5.5,3.5,1.3,0.2],
+                 [4.4,2.9,1.4,0.2]
+                 ]
+predicted_target_probabilities = model.predict(predict_input= predict_input)
+print(f"--- Predictions ---\n [sample -> prediction = probability]")
+for predict, target_p in zip(predict_input, predicted_target_probabilities):
+  arg_max = np.argmax(target_p)
+  print(f"{predict} -> {unique[arg_max]} = {round(target_p[arg_max]*100, 4)}%")

@@ -62,7 +62,10 @@ class LossFunction:
       return (-1/batch)*np.sum(np.log(predicted_values[np.arange(batch), class_indices] + 1e-15))
 
   # Binary classification
-  def Binary_loss(self):
+  def Binary_loss():
+    pass
+
+  def MSE(predicted_vals: np.ndarray, targets: np.ndarray, derived: bool= False) -> np.ndarray | np.float64:
     pass
 
 class BasicNeuralNetwork:
@@ -125,6 +128,11 @@ class BasicNeuralNetwork:
       self.layer_output = input_layer
       self.n_neuron = input_layer.shape[1]
 
+    def forward(self, predict_input: np.ndarray= None) -> np.ndarray:
+      if predict_input is not None:
+        self.layer_output = predict_input
+      else: 
+        pass
   #-----------------------------------------
 
   def __init__(self,
@@ -183,16 +191,15 @@ class BasicNeuralNetwork:
       self.network_loss = loss
     return loss
 
-  def _forward_propagation(self) -> None:
+  def _forward_propagation(self, predict_input: np.ndarray= None) -> None:
+    self.network_layers[0].forward(predict_input)
     for layer in self.network_layers[1:]:
       layer.forward()
 
   def _backward_propagation(self) -> None:
     for layer in self.network_layers[1:]:
       layer.weights -= self.learning_rate*(layer.layer_delta_term.T @ layer.prv_layer.layer_output) / self.batch
-      # We do sum biases instead of average because we are training in batch, so one bias value contributed to the error of every single sample in the batch, -
-      # its total responsibility for the loss is the sum of all individual errors (delta) it caused
-      layer.biases -= self.learning_rate*np.sum(layer.layer_delta_term, axis= 0)
+      layer.biases -= self.learning_rate*np.mean(layer.layer_delta_term, axis= 0)
 
   def _compute_delta_term(self) -> None:
     for layer in self.network_layers[-1:0:-1]:
@@ -202,14 +209,14 @@ class BasicNeuralNetwork:
     print("--- Start training ---")
     old_loss = 0
     while True:
-      self.iterations += 1
       self._forward_propagation()
       new_loss = self.compute_loss()
       self._compute_delta_term()
       # --------------
-      if self.iet > 0 and self.iterations % self.iet == 0:
+      if self.iterations % self.iet == 0:
         print(self.iterations, new_loss)
       # --------------
+      self.iterations += 1
       loss_change = abs((new_loss - old_loss) / new_loss)
       if loss_change < self.epsilon:
         break
@@ -218,4 +225,10 @@ class BasicNeuralNetwork:
         self._backward_propagation()
         continue
     
-    print("Completed")
+    print(f"Completed after {self.iterations} iterations")
+
+  def predict(self, predict_input: np.ndarray) -> np.ndarray:
+    self._forward_propagation(predict_input= predict_input)
+    result = self.network_layers[-1].layer_output
+    print(result.shape)
+    return result
