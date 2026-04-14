@@ -53,20 +53,24 @@ class ActivationFunction:
 class LossFunction:
   # Catergorical cross-entropy loss, targets are one-hot encoded matrix
   def cc_loss(predicted_values: np.ndarray, targets: np.ndarray, derived: bool= False) -> np.ndarray | np.float64:
+    batch = predicted_values.shape[0]
     if derived:
       # We add a tiny value to prevent divission by 0
-      return -targets / (predicted_values + 1e-15)
+      return (-1 / batch) * targets / (predicted_values + 1e-15)
     else:
-      batch = predicted_values.shape[0]
       class_indices = np.argmax(targets, axis= 1)
-      return (-1/batch)*np.sum(np.log(predicted_values[np.arange(batch), class_indices] + 1e-15))
+      return (-1 / batch)*np.sum(np.log(predicted_values[np.arange(batch), class_indices] + 1e-15))
 
   # Binary classification
   def Binary_loss():
     pass
 
-  def MSE(predicted_vals: np.ndarray, targets: np.ndarray, derived: bool= False) -> np.ndarray | np.float64:
-    pass
+  def MSE(predicted_values: np.ndarray, targets: np.ndarray, derived: bool= False) -> np.ndarray | np.float64:
+    batch = predicted_values.shape[0]
+    if derived:
+      return (1 / batch) * (predicted_values - targets)
+    else:
+      return (1 / (2*batch)) * np.sum((predicted_values - targets)**2)
 
 class BasicNeuralNetwork:
   class HiddenLayer:
@@ -125,6 +129,7 @@ class BasicNeuralNetwork:
 
   class InputLayer:
     def __init__(self, input_layer: np.ndarray):
+      self.layer_input = input_layer
       self.layer_output = input_layer
       self.n_neuron = input_layer.shape[1]
 
@@ -132,7 +137,7 @@ class BasicNeuralNetwork:
       if predict_input is not None:
         self.layer_output = predict_input
       else: 
-        pass
+        self.layer_output = self.layer_input
   #-----------------------------------------
 
   def __init__(self,
@@ -198,8 +203,8 @@ class BasicNeuralNetwork:
 
   def _backward_propagation(self) -> None:
     for layer in self.network_layers[1:]:
-      layer.weights -= self.learning_rate*(layer.layer_delta_term.T @ layer.prv_layer.layer_output) / self.batch
-      layer.biases -= self.learning_rate*np.mean(layer.layer_delta_term, axis= 0)
+      layer.weights -= self.learning_rate*(layer.layer_delta_term.T @ layer.prv_layer.layer_output)
+      layer.biases -= self.learning_rate*np.sum(layer.layer_delta_term, axis= 0)
 
   def _compute_delta_term(self) -> None:
     for layer in self.network_layers[-1:0:-1]:
@@ -230,5 +235,36 @@ class BasicNeuralNetwork:
   def predict(self, predict_input: np.ndarray) -> np.ndarray:
     self._forward_propagation(predict_input= predict_input)
     result = self.network_layers[-1].layer_output
-    print(result.shape)
     return result
+  
+  def evaluate(self):
+    model = self.loss_func.__name__
+    if model == "cc_loss":
+      act_classes = np.argmax(self.y_train, axis= 1)
+      predictions = self.network_layers[-1].layer_output
+      pred_classes = np.argmax(predictions, axis= 1)
+      precision = np.mean(pred_classes == act_classes) * 100
+      return precision
+    elif model == "MSE":
+      act_mean = np.mean(self.y_train)
+      sst = np.sum((self.y_train - act_mean)**2)
+      ssr = np.sum((self.y_train - self.network_layers[-1].layer_output)**2)
+
+      return (1 - ssr/sst)*100
+  
+  def predict_vs_target(self):
+    model = self.loss_func.__name__
+    if model == "cc_loss":
+      pass
+    elif model == "MSE":
+      pred_vals = self.network_layers[-1].layer_output.flatten()
+      act_vals = self.y_train.flatten()
+      plt.scatter(act_vals, pred_vals, c= 'r')
+      plt.ylabel("Predicted Values")
+      plt.xlabel("Actual Values")
+      plt.title("Prediction vs targets")
+
+      upper = max(max(pred_vals), max(act_vals))
+      lower = min(min(pred_vals), min(act_vals))
+      plt.plot([lower, upper], [lower, upper], c= "b", alpha= 0.5)
+      plt.show()
