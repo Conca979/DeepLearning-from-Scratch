@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -164,6 +164,7 @@ class BasicNeuralNetwork:
     self.x_train = training_set[0]
     self.y_train = training_set[1]
     self.batch = self.x_train.shape[0]
+    self.test_set_exist = test_set
     if test_set:
       self.x_test = test_set[0]
       self.y_test = test_set[1]
@@ -237,34 +238,42 @@ class BasicNeuralNetwork:
     result = self.network_layers[-1].layer_output
     return result
   
-  def evaluate(self):
+  def evaluate(self) -> np.float64:
     model = self.loss_func.__name__
-    if model == "cc_loss":
+    if model == "cc_loss": # Currently evaluate on training set
       act_classes = np.argmax(self.y_train, axis= 1)
       predictions = self.network_layers[-1].layer_output
       pred_classes = np.argmax(predictions, axis= 1)
       precision = np.mean(pred_classes == act_classes) * 100
       return precision
     elif model == "MSE":
-      act_mean = np.mean(self.y_train)
-      sst = np.sum((self.y_train - act_mean)**2)
-      ssr = np.sum((self.y_train - self.network_layers[-1].layer_output)**2)
+      if self.test_set_exist is None:
+        print("--- Warming, model does not have test set for evaluation ---")
+        return None
+      else:
+        act_mean = np.mean(self.y_test)
+        sst = np.sum((self.y_test - act_mean)**2)
+        predictions = self.predict(predict_input= self.x_test)
+        ssr = np.sum((self.y_test - predictions)**2)
 
-      return (1 - ssr/sst)*100
+        return (1 - ssr/sst)*100
   
-  def predict_vs_target(self):
+  def predict_vs_target(self) -> None:
     model = self.loss_func.__name__
     if model == "cc_loss":
       pass
     elif model == "MSE":
-      pred_vals = self.network_layers[-1].layer_output.flatten()
-      act_vals = self.y_train.flatten()
-      plt.scatter(act_vals, pred_vals, c= 'r')
-      plt.ylabel("Predicted Values")
-      plt.xlabel("Actual Values")
-      plt.title("Prediction vs targets")
+      if self.test_set_exist is None:
+        print("--- Warming, model does not have test set for evaluation ---")
+      else:
+        pred_vals = self.predict(predict_input= self.x_test).flatten()
+        act_vals = self.y_test.flatten()
+        plt.scatter(act_vals, pred_vals, c= 'r', alpha= 0.6)
+        plt.ylabel("Predicted Values")
+        plt.xlabel("Actual Values")
+        plt.title("Prediction vs targets")
 
-      upper = max(max(pred_vals), max(act_vals))
-      lower = min(min(pred_vals), min(act_vals))
-      plt.plot([lower, upper], [lower, upper], c= "b", alpha= 0.5)
-      plt.show()
+        upper = max(max(pred_vals), max(act_vals))
+        lower = min(min(pred_vals), min(act_vals))
+        plt.plot([lower, upper], [lower, upper], c= "b", alpha= 0.5)
+        plt.show()

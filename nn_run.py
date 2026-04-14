@@ -11,7 +11,7 @@ with open('data/StudentScore.csv', newline='') as f:
 def binary_encode(rows, col, positive_value):
   return np.array([1 if r[col] == positive_value else 0 for r in rows], dtype=float)
 
-  # Extract numeric columns 
+  # Extracting numeric columns 
 def get_col(rows, col):
   return np.array([float(r[col]) for r in rows])
 
@@ -36,17 +36,25 @@ math = get_col(rows, 'math score')
 reading = get_col(rows, 'reading score')
 writing = get_col(rows, 'writing score')
 
-# Assemble full data matrix
+# Assembling full data matrix
 data_set = np.column_stack([gender, lunch, test_prep, race_oh, edu_oh, reading, math, writing])
 
-# Feature scaling
+# Scaling features
 means = np.mean(data_set, axis=0)
 stds = np.std(data_set, axis=0)
 stds[stds == 0] = 1 # Avoid division by zero on binary cols
 data_set = (data_set - means) / stds
 
-x_train = data_set[:, :-1]
-y_train = data_set[:, -1][:, None]
+# Slitting data
+split_index = int(0.8*len(data_set))
+train_set = data_set[:split_index,:]
+test_set = data_set[split_index:, :]
+
+x_train = train_set[:, :-1]
+y_train = train_set[:, -1][:, None]
+
+x_test = test_set[:, :-1]
+y_test = test_set[:, -1][:, None]
 
 #--------------------------------
 act = nn.ActivationFunction
@@ -66,9 +74,9 @@ loss_func = nn.LossFunction.MSE
 model = nn.BasicNeuralNetwork(layers_init= model_inits,
                               loss_func= loss_func,
                               training_set= (x_train, y_train),
+                              test_set= (x_test, y_test),
                               leanring_rate= 0.01,
                               epsilon= 0.00001,
-                              test_set= None,
                               iteration_event_trigger= 10000
                               )
 
