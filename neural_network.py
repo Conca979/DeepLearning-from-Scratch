@@ -12,7 +12,7 @@ class ActivationFunction:
   # Rectified linear unit
   def ReLU(Z: np.ndarray, derived: bool= False) -> np.ndarray:
     if derived:
-      return np.maximum(0, np.minimum(1, Z))
+      return (Z > 0).astype(float)
     else:
       return np.maximum(0, Z)
   
