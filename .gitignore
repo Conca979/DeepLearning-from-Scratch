@@ -1,6 +1,5 @@
 .vscode/
 __pycache__/
 test.py
-test2.py
-functions.py
-data/StudentScore.csv
+test_run.py
+run.ipynb
