@@ -2,18 +2,17 @@ from keras.datasets import mnist  # just for data loading
 import neural_network as nn
 import numpy as np
 import time
-import csv
 
 (x_train, y_train_labels), (x_test, y_test_labels) = mnist.load_data()
 # Flatten 28x28 images → 784 features, normalize to [0, 1]
-x_train = cp.asarray(x_train.reshape(60000, 784) / 255.0, dtype=cp.float32)
-x_test  = cp.asarray(x_test.reshape(10000, 784)  / 255.0, dtype=cp.float32)
+x_train = np.asarray(x_train.reshape(60000, 784) / 255.0, dtype=np.float32)
+x_test  = np.asarray(x_test.reshape(10000, 784)  / 255.0, dtype=np.float32)
 
 # One-hot encode labels (10 classes: digits 0–9)
 def onehot(labels, n_classes=10):
     m = np.zeros((len(labels), n_classes))
     m[np.arange(len(labels)), labels] = 1
-    return cp.asarray(m, dtype=cp.float32)
+    return np.asarray(m, dtype=np.float32)
 
 y_train = onehot(y_train_labels)
 y_test  = onehot(y_test_labels)
@@ -35,11 +34,12 @@ model = nn.BasicNeuralNetwork(layers_init= model_inits,
                               loss_func= loss_func,
                               training_set= (x_train, y_train),
                               test_set= (x_test, y_test),
-                              leanring_rate= 0.01,
-                              iteration_event_trigger= 10000
+                              leanring_rate= 0.1,
+                              epsilon= 0.001,
+                              iteration_event_trigger= 10
                               )
 
-model.fit_model(epochs=20, batch_size=128)
+model.fit_model()
 
 end = time.time()
 print(f"Model is trained in {end-start:.6g}s")
