@@ -26,6 +26,10 @@ A pure-NumPy implementation of core machine learning algorithms — Linear Regre
 
 This project implements machine learning models from scratch using only NumPy, Matplotlib, and Pandas. The goal is educational — to understand exactly what happens under the hood during training, rather than relying on black-box libraries.
 
+**For detailed algorithmic explanations and mathematical breakdowns of the implementations, please refer to the specific module documentation:**
+- [Regression (Linear & Logistic) Documentation](./regression/README.md)
+- [Neural Network Documentation](./neural_network/README.md)
+
 **What's implemented:**
 
 | Model | Algorithm | Use Case |
