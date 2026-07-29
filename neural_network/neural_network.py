@@ -229,7 +229,8 @@ class BasicNeuralNetwork:
     while not stop:
       # Epoch limit reached
       if self.epoch == self.epoch_limit:
-        
+        stop = True
+        break
 
       # Shuffle dataset for each epoch
       indices = np.random.default_rng().permutation(n_samples)
