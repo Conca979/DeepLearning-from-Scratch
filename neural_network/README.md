@@ -35,8 +35,8 @@ Where $\alpha$ is the learning rate.
 
 ### 4. Weight Initialization
 
-- **He Initialization:** Scaled by $\sqrt{\frac{2}{\text{number\_of\_neuron\_in\_previous\_layer}}} $, optimized for ReLU activations to prevent vanishing gradients.
-- **Xavier Initialization:** Scaled by $\sqrt{\frac{1}{\text{number\_of\_neuron\_in\_previous\_layer}}} $, used for Sigmoid and Tanh activations.
+- **He Initialization:** Scaled by $\sqrt{\frac{2}{\text{numberNeuronInPreviousLayer}}} $, optimized for ReLU activations to prevent vanishing gradients.
+- **Xavier Initialization:** Scaled by $\sqrt{\frac{1}{\text{numberNeuronInPreviousLayer}}} $, used for Sigmoid and Tanh activations.
 
 ## Step-by-Step Setup & Training
 
