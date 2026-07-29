@@ -34,8 +34,9 @@ $b^{[l]} := b^{[l]} - \alpha \sum \delta^{[l]}$
 Where $\alpha$ is the learning rate.
 
 ### 4. Weight Initialization
-- **He Initialization:** Scaled by $\sqrt{\frac{2}{\text{fan\_in}}}$, optimized for ReLU activations to prevent vanishing gradients.
-- **Xavier Initialization:** Scaled by $\sqrt{\frac{1}{\text{fan\_in}}}$, used for Sigmoid and Tanh activations.
+
+- **He Initialization:** Scaled by $\sqrt{\frac{2}{\text{number\_of\_neuron\_in\_previous\_layer}}} $, optimized for ReLU activations to prevent vanishing gradients.
+- **Xavier Initialization:** Scaled by $\sqrt{\frac{1}{\text{number\_of\_neuron\_in\_previous\_layer}}} $, used for Sigmoid and Tanh activations.
 
 ## Step-by-Step Setup & Training
 
@@ -57,19 +58,24 @@ Define the architecture using a list of neuron counts and a corresponding list o
 ```python
 import neural_network as nn
 
-# [8 neurons in hidden layer, 1 neuron in output layer]
-# [ReLU for hidden, Identity for output]
-architecture = [[8, 1], [nn.ActivationFunction.ReLU, nn.ActivationFunction.identity]]
+act = nn.ActivationFunction
+# --- How Many Neurons per Layer? ---
+# The "In-Between" Rule: A number between the size of the input layer and output layer.
+# The 2/3 Rule: (Number of Inputs * 2/3) + Number of Outputs
+# The Funnel Architecture: Decrease the size for subsequent layers.
+model_inits = [[512, 256, 10], 
+               [act.ReLU, act.ReLU, act.softmax]]
+loss_func = nn.LossFunction.cc_loss
 
 model = nn.BasicNeuralNetwork(
-    layers_init=architecture,
+    layers_init=model_inits,
+    loss_func=loss_func,
     training_set=(x_train, y_train),
     test_set=(x_test, y_test),
-    loss_func=nn.LossFunction.MSE,
-    batch=32,                    # Mini-batch size
+    batch=128,                   # Mini-batch size
     leanring_rate=0.01,
     epsilon=0.00001,             # Convergence threshold based on loss smoothing
-    epoch_limit=1000,            # Max epochs
+    epoch_limit=20,              # Max epochs
     iteration_event_trigger=100  # Print progress every 100 iterations
 )
 ```
