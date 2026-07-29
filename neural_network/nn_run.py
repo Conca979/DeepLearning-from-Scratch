@@ -1,5 +1,5 @@
 from keras.datasets import mnist  # just for data loading
-import test as nn
+import neural_network as nn
 import numpy as np
 import time
 
