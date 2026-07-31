@@ -44,18 +44,16 @@ This project implements machine learning models from scratch using only NumPy, M
 
 ```
 MachineLeaning/
-├── regression.py          # Linear & Logistic Regression classes
-├── neural_network.py      # Neural Network, Activation & Loss functions
-├── run.py                 # Entry point for regression models
-├── nn_run.py              # Entry point for the neural network
+├── regression             # Linear & Logistic Regression classes
+├── neural_network         # Neural Network, Activation & Loss functions
 └── data/
     ├── Advertising.csv    # TV/Radio/Newspaper ad spend vs. sales
     ├── Cellphone.csv      # Phone specs vs. price
     ├── Diabetes.csv       # Medical indicators vs. diabetes progression
-    └── Iris.csv           # Flower measurements vs. species (classification)
+    ├── Iris.csv           # Flower measurements vs. species (classification)
+    ├── mnist              # mnist dataset
+    └── ss2t               # ss2t dataset
 ```
-
-> **Note:** `run.py` and `nn_run.py` reference `data/StudentScore.csv` by default, which is excluded from the repository (listed in `.gitignore`). Swap this path to any compatible dataset before running.
 
 ---
 
@@ -66,6 +64,7 @@ MachineLeaning/
 - Matplotlib
 - Seaborn
 - Pandas
+- tensorflow    # quick extract mnist dataset
 
 ---
 
@@ -104,6 +103,7 @@ The `data/` folder contains four ready-to-use datasets:
 | `Cellphone.csv` | Phone specs (CPU, RAM, camera, etc.) | Price | Linear Regression |
 | `Diabetes.csv` | BMI, BP, Cholesterol, LDL | Disease progression score | Linear Regression |
 | `Iris.csv` | Sepal/petal length & width | Species | Classification (Neural Network) |
+| `ss2t` | text-string | label | classification |
 
 ---
 
