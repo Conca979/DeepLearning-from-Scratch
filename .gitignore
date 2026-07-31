@@ -1,5 +1,3 @@
 .vscode/
 __pycache__/
-test.py
-test_run.py
-run.ipynb
+test/
