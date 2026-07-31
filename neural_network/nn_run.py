@@ -1,5 +1,7 @@
 from keras.datasets import mnist  # just for data loading
 import neural_network as nn
+import act_functions as actf
+import loss_functions as lf
 import numpy as np
 import time
 
@@ -18,14 +20,14 @@ y_train = onehot(y_train_labels)
 y_test  = onehot(y_test_labels)
 
 #--------------------------------
-act = nn.ActivationFunction
+act = actf.ActivationFunction
 # --- How Many Neurons per Layer? ---
 # The "In-Between" Rule: The most common choice is a number between the size of the input layer and the size of the output layer.
 # The 2/3 Rule: A classic heuristic is: (Number of Inputs * 2/3) + Number of Outputs
 # The Funnel Architecture: If you use multiple hidden layers, you generally want the network to "compress" the information as it moves forward. Make the first hidden layer the largest, and decrease the size for subsequent layers.
 model_inits = [[512, 256, 10], 
                [act.ReLU, act.ReLU, act.softmax]]
-loss_func = nn.LossFunction.cc_loss
+loss_func = lf.LossFunction.cc_loss
 
 #--------------------------------
 start = time.time()
