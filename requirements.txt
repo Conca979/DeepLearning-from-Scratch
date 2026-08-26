@@ -1,5 +1,7 @@
 numpy
 pandas
 matplotlib
-tensorflow
 seaborn
+pillow
+pyarrow
+fastparquet

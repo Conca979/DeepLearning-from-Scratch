@@ -6,13 +6,6 @@ from .nn.functional import ActivationFunction, LossFunction
 from .optim.optimizers import SGD
 
 __all__ = [
-    'Network',
-    'Dense',
-    'InputLayer',
-    'Conv2D',
-    'MaxPool2D',
-    'Flatten',
-    'ActivationFunction',
-    'LossFunction',
-    'SGD'
+    'Network', 'Dense', 'InputLayer', 'Conv2D', 'MaxPool2D', 'Flatten',
+    'ActivationFunction', 'LossFunction', 'SGD'
 ]

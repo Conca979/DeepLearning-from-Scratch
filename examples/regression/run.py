@@ -1,25 +1,27 @@
-from regression import BasicLinearRegression, BasicLogisticRegression
-from itertools import combinations
+from regression import BasicLinearRegression
 import numpy as np
 
 # ------------------------------------------------------------------
-rawDataSet = np.loadtxt('data/StudentScore.csv', delimiter=',', dtype=str, skiprows=1)
+rawDataSet = np.loadtxt('data/StudentScore.csv',
+                        delimiter=',',
+                        dtype=str,
+                        skiprows=1)
 rawDataSet = np.char.strip(rawDataSet, '"')
 dataSet = np.zeros(rawDataSet.shape, dtype=float)
 for colIndex in range(5):
   uniqueValues = np.unique(rawDataSet[:, colIndex])
-  
+
   # Create a dictionary mapping each unique string to a float integer
   mapping = {val: float(i) for i, val in enumerate(uniqueValues)}
-  
+
   # Apply the mapping to the column
   for val, mappedInt in mapping.items():
-      dataSet[rawDataSet[:, colIndex] == val, colIndex] = mappedInt
+    dataSet[rawDataSet[:, colIndex] == val, colIndex] = mappedInt
 
 dataSet[:, 5:] = rawDataSet[:, 5:].astype(float)
 
 # Splitting data into 80 training / 20 testing
-splitIndex = int(dataSet.shape[0]*0.8)
+splitIndex = int(dataSet.shape[0] * 0.8)
 trSet = dataSet[:splitIndex, :]
 tSet = dataSet[splitIndex:, :]
 
@@ -62,8 +64,8 @@ tSet = dataSet[splitIndex:, :]
 #     # Start training
 #     model = BasicLinearRegression(trainingSet= trainingSet,
 #                                   testSet= validatingSet,
-#                                   epsilon= 1e-7, 
-#                                   learningRate= 0.0001, 
+#                                   epsilon= 1e-7,
+#                                   learningRate= 0.0001,
 #                                   modelDegree= d,
 #                                   iterationLogTrigger= -1,
 #                                   initWeights= None)
@@ -84,13 +86,13 @@ tSet = dataSet[splitIndex:, :]
 
 # ------------------------------------------------
 
-model = BasicLinearRegression(trainingSet= dataSet,
-                              testSet= None,
-                              epsilon= 1e-7, 
-                              learningRate= 0.0001, 
-                              modelDegree= 5,
-                              iterationLogTrigger= 1e5,
-                              initWeights= None)
+model = BasicLinearRegression(trainingSet=dataSet,
+                              testSet=None,
+                              epsilon=1e-3,
+                              learningRate=0.01,
+                              modelDegree=5,
+                              iterationLogTrigger=100,
+                              initWeights=None)
 
 print(model.featureCount)
 model.fitModel()

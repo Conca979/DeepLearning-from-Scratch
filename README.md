@@ -1,252 +1,107 @@
-# Machine Learning from Scratch
+# Custom Deep Learning Framework
 
-A pure-NumPy implementation of core machine learning algorithms — Linear Regression, Logistic Regression, and a fully-connected Neural Network — built from the ground up without scikit-learn or any ML framework.
+A from-scratch, pure-NumPy deep learning framework supporting Neural Networks (MLP), Convolutional Neural Networks (CNNs), and regression models.
 
----
+This document provides a quickstart guide and API reference for building, training, and evaluating models using the framework.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Project Structure](#project-structure)
-- [Requirements](#requirements)
-- [Setup](#setup)
-- [Datasets](#datasets)
-- [Running the Models](#running-the-models)
-  - [Linear Regression](#linear-regression)
-  - [Logistic Regression](#logistic-regression)
-  - [Neural Network](#neural-network)
-- [Model Configuration](#model-configuration)
-  - [Regression Hyperparameters](#regression-hyperparameters)
-  - [Neural Network Hyperparameters](#neural-network-hyperparameters)
-- [Key Concepts Implemented](#key-concepts-implemented)
-
----
-
-## Overview
-
-This project implements machine learning models from scratch using only NumPy, Matplotlib, and Pandas. The goal is educational — to understand exactly what happens under the hood during training, rather than relying on black-box libraries.
-
-**For detailed algorithmic explanations and mathematical breakdowns of the implementations, please refer to the specific module documentation:**
-- [Regression (Linear & Logistic) Documentation](./regression/README.md)
-- [Neural Network Documentation](./neural_network/README.md)
-
-**What's implemented:**
-
-| Model | Algorithm | Use Case |
-|---|---|---|
-| `BasicLinearRegression` | Gradient Descent | Continuous value prediction (regression) |
-| `BasicLogisticRegression` | Gradient Ascent (log-likelihood) | Binary classification |
-| `BasicNeuralNetwork` | Backpropagation | Regression & multi-class classification |
-
----
-
-## Project Structure
-
-```
-MachineLeaning/
-├── regression             # Linear & Logistic Regression classes
-├── neural_network         # Neural Network, Activation & Loss functions
-└── data/
-    ├── Advertising.csv    # TV/Radio/Newspaper ad spend vs. sales
-    ├── Cellphone.csv      # Phone specs vs. price
-    ├── Diabetes.csv       # Medical indicators vs. diabetes progression
-    ├── Iris.csv           # Flower measurements vs. species (classification)
-    ├── mnist              # mnist dataset
-    └── ss2t               # ss2t dataset
-```
-
----
-
-## Requirements
-
-- Python 3.10+
-- NumPy
-- Matplotlib
-- Seaborn
-- Pandas
-- tensorflow    # quick extract mnist dataset
-
----
-
-## Setup
-
-**1. Clone the repository**
-
+## Installation / Setup
+Ensure you have the required dependencies installed (NumPy, Pandas, Pillow, etc.).
 ```bash
-git clone https://github.com/Conca979/MachineLearning.git
-cd MachineLearning
+uv init
+uv add -r requirements.txt
 ```
 
-**2. Create a virtual environment (recommended)**
+## Quickstart API Guide
 
-```bash
-python -m venv venv
-source venv/bin/activate        # macOS / Linux
-venv\Scripts\activate           # Windows
-```
-
-**3. Install dependencies**
-
-```bash
-pip install numpy matplotlib seaborn pandas
-```
-
----
-
-## Datasets
-
-The `data/` folder contains four ready-to-use datasets:
-
-| File | Features | Target | Task |
-|---|---|---|---|
-| `Advertising.csv` | TV, Radio, Newspaper spend | Sales | Linear Regression |
-| `Cellphone.csv` | Phone specs (CPU, RAM, camera, etc.) | Price | Linear Regression |
-| `Diabetes.csv` | BMI, BP, Cholesterol, LDL | Disease progression score | Linear Regression |
-| `Iris.csv` | Sepal/petal length & width | Species | Classification (Neural Network) |
-| `ss2t` | text-string | label | classification |
-
----
-
-## Running the Models
-
-### Linear Regression
-
-Edit `run.py` to point to your dataset and configure hyperparameters, then run:
-
-```bash
-python run.py
-```
-
-A minimal example using `Advertising.csv`:
-
+### 1. Imports
+Import the core components from the `deep_learning` package:
 ```python
-from regression import BasicLinearRegression
-import numpy as np
-
-data = np.loadtxt('data/Advertising.csv', delimiter=',', skiprows=1, usecols=(1,2,3,4))
-
-model = BasicLinearRegression(
-    trainingSet=data,
-    testSet=None,
-    epsilon=1e-7,
-    learningRate=0.0001,
-    modelDegree=1,
-    iterationLogTrigger=10000
+from deep_learning import (
+    Network, 
+    InputLayer, Dense, Conv2D, MaxPool2D, Flatten,
+    ActivationFunction, LossFunction
 )
-
-model.fitModel()
-print(f"R²: {model._modelEvaluaion()[2]:.4f}")
-print(f"Iterations: {model.iterationCount}")
-model.showModel()          # Scatter plot: predicted vs actual values
-model.showModel(graph=1)   # Cost vs. iteration curve
 ```
 
----
+### 2. Prepare Data
+Ensure your inputs and targets are NumPy arrays:
+- **Classification Targets**: One-hot encoded (e.g., shape `(N, classes)`).
+- **CNN Inputs**: Shaped as `(N, Channels, Height, Width)`.
+- **Dense/MLP Inputs**: Shaped as `(N, Features)`.
 
-### Logistic Regression
+### 3. Define the Architecture
+Construct your model as a standard Python list of layers. The first layer must always be an `InputLayer` initialized with the training inputs.
 
+**Example CNN Architecture:**
 ```python
-from regression import BasicLogisticRegression
-import numpy as np
+act = ActivationFunction
 
-# Expects last column to be a binary label (0 or 1)
-data = np.loadtxt('data/your_binary_dataset.csv', delimiter=',', skiprows=1)
-split = int(len(data) * 0.8)
-
-model = BasicLogisticRegression(
-    trainingSet=data[:split],
-    testSet=data[split:],
-    epsilon=1e-6,
-    learningRate=0.001,
-    modelDegree=1,
-    logEventTrigger=10000
-)
-
-model.fitModel()
-model.showConfusionMatrix()   # Heatmap with F1 score
-model.showCostTrend()         # Log-likelihood over iterations
+layers = [
+    InputLayer(x_train),
+    Conv2D(16, kernel_size=3, act_func=act.ReLU, stride=1, padding=1, use_bn=True),
+    MaxPool2D(pool_size=2, stride=2),
+    Conv2D(32, kernel_size=3, act_func=act.ReLU, stride=1, padding=1, use_bn=True),
+    MaxPool2D(pool_size=2, stride=2),
+    Flatten(),
+    Dense(256, act_func=act.ReLU, use_dropout=True, drop_rate=0.3),
+    Dense(10, act_func=act.softmax)
+]
 ```
 
----
-
-### Neural Network
-
-Edit `nn_run.py` to point to your dataset, then run:
-
-```bash
-python nn_run.py
-```
-
-A minimal example using `Advertising.csv` for regression:
-
+### 4. Initialize the Network
+Pass the layers and hyperparameters to the `Network` class:
 ```python
-import neural_network as nn
-import numpy as np
-
-data = np.loadtxt('data/Advertising.csv', delimiter=',', skiprows=1, usecols=(1,2,3,4))
-split = int(0.8 * len(data))
-
-x_train, y_train = data[:split, :-1], data[:split, -1:]
-x_test,  y_test  = data[split:, :-1], data[split:, -1:]
-
-act = nn.ActivationFunction
-model = nn.BasicNeuralNetwork(
-    layers_init=[[8, 1], [act.ReLU, act.identity]],
-    loss_func=nn.LossFunction.MSE,
-    training_set=(x_train, y_train),
-    test_set=(x_test, y_test),
-    leanring_rate=0.01,
-    epsilon=0.00001,
-    iteration_event_trigger=10000
+model = Network(
+    layers=layers,
+    training_set=(x_train, y_train), # Tuple of (inputs, targets)
+    test_set=(x_test, y_test),       # Optional evaluation set
+    loss_func=LossFunction.cc_loss,  # cc_loss for classification, MSE for regression
+    batch=32,                        # Batch size (None for full-batch training)
+    learning_rate=0.01,
+    epoch_limit=10,
+    iteration_event_trigger=1        # How often to print training progress logs
 )
+```
 
+### 5. Training
+Trigger the training loop using `.fit_model()`. The model will iteratively perform forward propagation, backpropagation, and weight updates.
+```python
 model.fit_model()
-print(f"Goodness of fit: {model.evaluate()}")
-model.predict_vs_target()
 ```
 
-For **multi-class classification** with the Iris dataset, use `softmax` activation on the output layer and `cc_loss` (categorical cross-entropy) as the loss function. See the commented-out example at the bottom of `nn_run.py`.
+### 6. Evaluation
+Evaluate the model against the `test_set` provided during initialization. 
+- For classification (`cc_loss`), it returns the accuracy percentage.
+- For regression (`MSE`), it returns the R-squared percentage.
+```python
+accuracy = model.evaluate()
+print(f"Test Accuracy: {accuracy:.2f}%")
+```
 
----
+### 7. Inference / Prediction
+Run inference on new data using `.predict()`.
+```python
+predictions = model.predict(input=new_data_array)
+predicted_classes = np.argmax(predictions, axis=1)
+```
 
-## Model Configuration
+### 8. Save and Load Weights
+You can persist trained weights and biases to a `.npz` file and reload them later to skip training.
+```python
+# Save weights
+model.save_weights("my_model_weights.npz")
 
-### Regression Hyperparameters
+# Load weights
+model.load_weights("my_model_weights.npz")
+```
 
-| Parameter | Description | Typical Value |
-|---|---|---|
-| `learningRate` | Step size for gradient update | `0.0001` – `0.01` |
-| `epsilon` | Convergence threshold (relative cost change) | `1e-6` – `1e-7` |
-| `modelDegree` | Polynomial degree for feature expansion | `1` (linear) – `5` |
-| `iterationLogTrigger` | Print progress every N iterations (`-1` to disable) | `10000` |
-| `initWeights` | Custom starting weights; `None` initializes to zeros | `None` |
+## Available Layers
+- `InputLayer(inputs)`: Placeholder for the input shape and data.
+- `Dense(n_neurons, act_func, use_dropout=False, drop_rate=0.0)`: Fully connected layer.
+- `Conv2D(n_kernels, kernel_size, act_func, stride, padding, use_bn=False)`: 2D Convolutional layer.
+- `MaxPool2D(pool_size, stride)`: 2D Max pooling layer.
+- `Flatten()`: Flattens multi-dimensional inputs into a 1D vector (often used before Dense layers).
 
-### Neural Network Hyperparameters
-
-| Parameter | Description | Example |
-|---|---|---|
-| `layers_init` | `[[neurons_per_layer], [activations]]` | `[[8, 1], [ReLU, identity]]` |
-| `loss_func` | `LossFunction.MSE` or `LossFunction.cc_loss` | `LossFunction.MSE` |
-| `leanring_rate` | Gradient descent step size | `0.01` |
-| `epsilon` | Convergence threshold | `0.00001` |
-| `iteration_event_trigger` | Log training progress every N iterations | `10000` |
-
-**Available activation functions:** `identity`, `ReLU`, `sigmoid`, `softmax`, `Tanh`
-
-**Layer sizing heuristics (from code comments):**
-- *In-between rule:* choose neuron count between input and output size
-- *2/3 rule:* `(n_inputs × 2/3) + n_outputs`
-- *Funnel architecture:* decrease neuron count in successive hidden layers
-
----
-
-## Key Concepts Implemented
-
-- **Z-score standardization** — applied to both features and output to prevent overflow during gradient computation
-- **Polynomial feature expansion** — combinatorial feature interactions up to degree `n` via `PolyFeatureTransform`
-- **Gradient descent / ascent** — weight updates driven by MSE (linear) or log-likelihood (logistic)
-- **Backpropagation** — full forward and backward pass with support for arbitrary layer depth
-- **Weight initialization** — He (Kaiming) initialization for ReLU layers; Xavier for others
-- **Model evaluation** — R² for regression; confusion matrix, precision, recall, F1, accuracy for classification
-- **Model persistence** — `saveModel()` serializes trained weights and hyperparameters to JSON
-- **K-fold cross-validation** — scaffolding present in `run.py` (commented out, ready to enable)
+## Available Activation & Loss Functions
+- **Activations (`ActivationFunction`)**: `ReLU`, `softmax`, `sigmoid`, `linear`
+- **Losses (`LossFunction`)**: `cc_loss` (Categorical Cross-Entropy), `MSE` (Mean Squared Error)
