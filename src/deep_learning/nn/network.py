@@ -4,25 +4,27 @@ from typing import Callable
 class Network:
   def __init__(self,
                layers: list,
-               training_set: tuple[np.ndarray, np.ndarray],
                loss_func: Callable,
-               batch: int = None,
+               training_set: tuple[np.ndarray, np.ndarray] | None = None,
+               batch: int | None = None,
                learning_rate: float = 0.01,
-               epsilon: float = 0.0001,
-               epoch_limit: int = 10,
-               test_set: tuple[np.ndarray, np.ndarray] = None,
-               iteration_event_trigger: int = -1):
-               
+               epsilon: float | None = 0.0001,
+               epoch_limit: int | None = 10,
+               test_set: tuple[np.ndarray, np.ndarray] | None = None,
+               iteration_event_trigger: int | None = -1):
+
+    # If training set is not specified, user tends to load post-trained weights
+    if training_set:
+      self.x_train = training_set[0]
+      self.y_train = training_set[1]
+      self.batch = batch if batch is not None else self.x_train.shape[0]
+    
     self.network_layers = layers
     self.loss_func = loss_func
     self.learning_rate = learning_rate
     self.epsilon = epsilon
     self.epoch_limit = epoch_limit
     self.iet = iteration_event_trigger
-
-    self.x_train = training_set[0]
-    self.y_train = training_set[1]
-    self.batch = batch if batch is not None else self.x_train.shape[0]
 
     self.test_set_exist = test_set is not None
     if self.test_set_exist:
@@ -149,7 +151,7 @@ class Network:
         return (1 - ssr / sst) * 100
     return None
 
-  def save_weights(self, path: str) -> None:
+  def save_weights(self, path: str, accuracy: float = None) -> None:
     arrays = {}
     for idx, layer in enumerate(self.network_layers[1:], 1):
       if hasattr(layer, 'weights') and layer.weights is not None:
@@ -163,10 +165,13 @@ class Network:
         arrays[f"l{idx}_bn_beta"] = layer.bn_beta
         arrays[f"l{idx}_bn_run_mean"] = layer.bn_run_mean
         arrays[f"l{idx}_bn_run_var"] = layer.bn_run_var
+    if accuracy is not None:
+      arrays["accuracy"] = np.float32(accuracy)
     np.savez(path, **arrays)
-    print(f"Weights saved -> {path}.npz")
+    acc_str = f"  |  accuracy: {accuracy:.2f}%" if accuracy is not None else ""
+    print(f"Weights saved -> {path}.npz{acc_str}")
 
-  def load_weights(self, path: str) -> None:
+  def load_weights(self, path: str) -> float | None:
     data = np.load(path if path.endswith('.npz') else path + '.npz')
     
     # Auto-detect legacy indexing (nn used 0-based, cnn used 1-based)
@@ -184,4 +189,8 @@ class Network:
         layer.bn_beta = data[f"l{idx}_bn_beta"]
         layer.bn_run_mean = data[f"l{idx}_bn_run_mean"]
         layer.bn_run_var = data[f"l{idx}_bn_run_var"]
-    print(f"Weights loaded <- {path}")
+
+    accuracy = float(data["accuracy"]) if "accuracy" in data else None
+    acc_str = f"  |  accuracy: {accuracy:.2f}%" if accuracy is not None else ""
+    print(f"Weights loaded <- {path}{acc_str}")
+    return accuracy

@@ -51,7 +51,7 @@ def _col2im(col: np.ndarray, x_shape: tuple, k: np.ndarray, i: np.ndarray,
                padding:-padding] if padding > 0 else x_pad
 
 class InputLayer:
-  def __init__(self, x_train: np.ndarray):
+  def __init__(self, x_train: np.ndarray | None):
     self.layer_input = x_train  # (N, C, H, W)
     self.out_shape = x_train.shape[1:]  # (C, H, W)  — spatial dims only
     self.layer_output = None

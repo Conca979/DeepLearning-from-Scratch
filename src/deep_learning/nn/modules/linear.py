@@ -4,7 +4,6 @@ from ..core import Module
 
 
 class Dense(Module):
-
   def __init__(self,
                n_neuron: int,
                act_func: Callable,
@@ -90,13 +89,16 @@ class Dense(Module):
 
 
 class InputLayer(Module):
-
-  def __init__(self, layer_input: np.ndarray):
+  def __init__(self, layer_input: np.ndarray | None = None, input_shape: tuple | None = None):
     super().__init__()
     self.layer_input = layer_input
-    self.out_shape = layer_input.shape[1:]
-    self.n_neuron = layer_input.shape[1] if len(
-        layer_input.shape) == 2 else np.prod(layer_input.shape[1:])
+
+    if input_shape is None:
+      self.out_shape = layer_input.shape[1:]
+      self.n_neuron = layer_input.shape[1] if len(layer_input.shape) == 2 else np.prod(layer_input.shape[1:])
+    else:
+      self.out_shape = input_shape[1:]
+      self.n_neuron = input_shape[1] if len(input_shape) == 2 else np.prod(input_shape[1:])
 
   def init(self):
     pass
