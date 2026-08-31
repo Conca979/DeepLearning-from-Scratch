@@ -1,21 +1,3 @@
-"""
-cnn_run.py  —  CNN training + interactive draw-and-predict demo
-================================================================
-Architecture  (LeNet-style, 98–99 % expected accuracy on MNIST):
-
- Input  (batch, 1, 28, 28)
- ├─ Conv(16, 3×3, pad=1)  + BN + ReLU  ->  (batch, 16, 28, 28)
- ├─ MaxPool(2, stride=2)               ->  (batch, 16, 14, 14)
- ├─ Conv(32, 3×3, pad=1)  + BN + ReLU  ->  (batch, 32, 14, 14)
- ├─ MaxPool(2, stride=2)               ->  (batch, 32, 7, 7)
- ├─ Flatten                            ->  (batch, 1568)
- ├─ Dense(256, ReLU, Dropout=0.3)
- └─ Dense(10,  softmax)
-
-Saved weights file:  cnn_weights.npz
- On first run the model is trained and weights are saved.
- Subsequent runs skip training and load straight from file.
-"""
 
 import os, time
 import tkinter as tk
@@ -106,8 +88,7 @@ if os.path.exists(WEIGHTS_FILE):
   accuracy = model.evaluate()
 else:
   print("\nNo saved weights found — training from scratch …")
-  print(
-      "(this may take 20–40 min on CPU; weights will be saved for next run)\n")
+  print("(this may take 20-40 min on CPU; weights will be saved for next run)\n")
   t0 = time.time()
   model.fit_model()
   elapsed = time.time() - t0

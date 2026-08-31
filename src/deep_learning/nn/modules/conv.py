@@ -133,13 +133,14 @@ class Conv2D(Module):
     self.x_shape_cache = x.shape
 
     # 1. Pad & im2col  →  col : (batch, C_in*kH*kW, out_H*out_W)
-    x_pad = (np.pad(x, ((0, 0), (0, 0), (self.padding, ) * 2,
-                        (self.padding, ) * 2)) if self.padding > 0 else x)
+    # np.pad(array, pad_width) expects a tuple of (before, after) pairs for every dimension of the array:
+    x_pad = (np.pad(x, ((0, 0), (0, 0), (self.padding, ) * 2, (self.padding, ) * 2)) if self.padding > 0 else x)
     col = _im2col(x_pad, self._k, self._i, self._j, self.out_H, self.out_W)
     self.col = col  # saved for kernel gradient in backward
 
     # 2. Z = W_col @ col + b  (one matmul for the entire batch)
     W_col = self.kernels.reshape(self.n_filters, -1)  # (n_f, C*kH*kW)
+      # einsum: einstain summation
     Z_col = np.einsum('fc,bcn->bfn', W_col, col, optimize=True)
     Z_col += self.biases[None, :, None]  # broadcast bias
     Z = Z_col.reshape(batch, self.n_filters, self.out_H, self.out_W)
