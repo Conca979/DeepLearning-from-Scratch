@@ -6,4 +6,4 @@ test/
 .venv/
 
 # pre-trained weights
-weights/
+# weights/
