@@ -2,7 +2,16 @@
 
 A from-scratch, pure-NumPy deep learning framework supporting Neural Networks (MLP), Convolutional Neural Networks (CNNs), and regression models.
 
+**This README.md is AI generated**
+
 This document provides a quickstart guide and API reference for building, training, and evaluating models using the framework.
+
+## Project Structure
+
+- `src/deep_learning/`: Core framework code (layers, network, activations, losses).
+- `training/`: Scripts to train models (e.g., `cnn_train_mnist.py`, `cnn_train_fashion_mnist.py`, `nn_train_mnist.py`). These scripts train the models and save the weights to the `weights/` directory.
+- `Demo/`: Interactive GUI applications (using Tkinter) to test the trained models. Draw a digit or a piece of clothing and see the model's prediction in real-time!
+- `weights/`: Stores the `.npz` files containing pre-trained weights and training accuracy.
 
 ## Installation / Setup
 Ensure you have the required dependencies installed (NumPy, Pandas, Pillow, etc.).
@@ -10,6 +19,26 @@ Ensure you have the required dependencies installed (NumPy, Pandas, Pillow, etc.
 uv init
 uv add -r requirements.txt
 ```
+
+## Running the Interactive Demos
+
+The project includes fun interactive applications to test the models. Before running a demo, you must check if pre-trained weights are available on ./weights/ folder, or run the corresponding training script to generate the weights!
+
+1. **CNN MNIST Digit Recognizer:**
+   ```bash
+   python training/cnn_train_mnist.py
+   python Demo/cnn_mnist_demo.py
+   ```
+2. **Dense NN MNIST Digit Recognizer:**
+   ```bash
+   python training/nn_train_mnist.py
+   python Demo/nn_mnist_demo.py
+   ```
+3. **CNN Fashion MNIST Recognizer:**
+   ```bash
+   python training/cnn_train_fashion_mnist.py
+   python Demo/cnn_fashin_mnist_demo.py
+   ```
 
 ## Quickstart API Guide
 
@@ -30,14 +59,14 @@ Ensure your inputs and targets are NumPy arrays:
 - **Dense/MLP Inputs**: Shaped as `(N, Features)`.
 
 ### 3. Define the Architecture
-Construct your model as a standard Python list of layers. The first layer must always be an `InputLayer` initialized with the training inputs.
+Construct your model as a standard Python list of layers. The first layer must always be an `InputLayer`.
 
 **Example CNN Architecture:**
 ```python
 act = ActivationFunction
 
 layers = [
-    InputLayer(x_train),
+    InputLayer(x_train), # Or InputLayer(None, input_shape=(-1, 1, 28, 28)) if x_train is not yet available
     Conv2D(16, kernel_size=3, act_func=act.ReLU, stride=1, padding=1, use_bn=True),
     MaxPool2D(pool_size=2, stride=2),
     Conv2D(32, kernel_size=3, act_func=act.ReLU, stride=1, padding=1, use_bn=True),
@@ -86,17 +115,17 @@ predicted_classes = np.argmax(predictions, axis=1)
 ```
 
 ### 8. Save and Load Weights
-You can persist trained weights and biases to a `.npz` file and reload them later to skip training.
+You can persist trained weights, biases, and accuracy to a `.npz` file and reload them later to skip training.
 ```python
-# Save weights
-model.save_weights("my_model_weights.npz")
+# Save weights (can optionally store training accuracy inside the file)
+model.save_weights("my_model_weights.npz", accuracy=accuracy)
 
-# Load weights
-model.load_weights("my_model_weights.npz")
+# Load weights (returns the stored accuracy, or None if not present)
+loaded_accuracy = model.load_weights("my_model_weights.npz")
 ```
 
 ## Available Layers
-- `InputLayer(inputs)`: Placeholder for the input shape and data.
+- `InputLayer(inputs, input_shape)`: Placeholder for the input shape and data.
 - `Dense(n_neurons, act_func, use_dropout=False, drop_rate=0.0)`: Fully connected layer.
 - `Conv2D(n_kernels, kernel_size, act_func, stride, padding, use_bn=False)`: 2D Convolutional layer.
 - `MaxPool2D(pool_size, stride)`: 2D Max pooling layer.
