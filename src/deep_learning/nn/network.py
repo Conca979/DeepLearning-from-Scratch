@@ -8,23 +8,31 @@ class Network:
                training_set: tuple[np.ndarray, np.ndarray] | None = None,
                batch: int | None = None,
                learning_rate: float = 0.01,
+               lr_decay: float = 1.0,
                epsilon: float | None = 0.0001,
                epoch_limit: int | None = 10,
                test_set: tuple[np.ndarray, np.ndarray] | None = None,
-               iteration_event_trigger: int | None = -1):
+               iteration_event_trigger: int | None = -1,
+               eval_every: int = 0,
+               exponential_moving_average: float = 0.2,
+               augment_fn: Callable | None = None):
 
-    # If training set is not specified, user tends to load post-trained weights
+    # If training set is not specified, user tends to load pre-trained weights
     if training_set:
       self.x_train = training_set[0]
       self.y_train = training_set[1]
       self.batch = batch if batch is not None else self.x_train.shape[0]
-    
+
+    self.beta = exponential_moving_average
+    self.augment_fn = augment_fn
     self.network_layers = layers
     self.loss_func = loss_func
     self.learning_rate = learning_rate
+    self.lr_decay = lr_decay
     self.epsilon = epsilon
     self.epoch_limit = epoch_limit
     self.iet = iteration_event_trigger
+    self.eval_every = eval_every
 
     self.test_set_exist = test_set is not None
     if self.test_set_exist:
@@ -70,21 +78,26 @@ class Network:
     for layer in self.network_layers[1:]:
       layer.forward()
 
-  def _backward_propagation(self, targets: np.ndarray) -> None:
+  def _backward_propagation(self, targets: np.ndarray, current_lr: float = None) -> None:
+    if current_lr is None:
+      current_lr = self.learning_rate
+      
     for layer in self.network_layers[-1:0:-1]:
       layer.compute_delta_term(network=self, targets=targets)
 
     # Update weights (can be replaced by an external Optimizer class if needed)
     for layer in self.network_layers[1:]:
-      layer.update_weights(self.learning_rate)
+      layer.update_weights(current_lr)
 
   def fit_model(self) -> None:
+    if self.eval_every == 0 and not self.test_set_exist:
+      pass  # no test set; skip end-of-training eval silently
     print("--- Start training ---")
     self.training = True
     n_samples = self.x_train.shape[0]
     smoothed_loss = None
     prv_smoothed_loss = None
-    beta = 0.2
+    beta = self.beta
 
     stop = False
     while not stop:
@@ -94,14 +107,19 @@ class Network:
 
       indices = np.random.default_rng().permutation(n_samples)
       self.epoch += 1
+      current_lr = self.learning_rate * (self.lr_decay ** (self.epoch - 1))
 
       for i in range(0, n_samples, self.batch):
         batch_indices = indices[i:i + self.batch]
 
-        self._forward_propagation(predict_input=self.x_train[batch_indices])
+        x_batch = self.x_train[batch_indices]
+        if self.augment_fn is not None:
+          x_batch = self.augment_fn(x_batch)
+
+        self._forward_propagation(predict_input=x_batch)
         new_loss = self.compute_loss(targets=self.y_train[batch_indices])
 
-        self._backward_propagation(targets=self.y_train[batch_indices])
+        self._backward_propagation(targets=self.y_train[batch_indices], current_lr=current_lr)
 
         if smoothed_loss is None:
           smoothed_loss = new_loss
@@ -117,17 +135,33 @@ class Network:
 
         if self.iet > 0 and self.iterations % self.iet == 0:
           print(
-              f"Updates: #{self.iterations} | Loss: {new_loss:.6f} | Epoch: #{self.epoch}"
+              f"Updates: #{self.iterations} | Loss: {new_loss:.6f} | Epoch: #{self.epoch} | clr = {current_lr:.4f}"
           )
         self.iterations += 1
 
         prv_smoothed_loss = smoothed_loss
 
+      # Per-epoch evaluation on test set
+      if self.test_set_exist and self.eval_every > 0 and self.epoch % self.eval_every == 0:
+        acc = self.evaluate()
+        self.training = True  # restore training mode after evaluate()
+        if acc is not None:
+          print(f"Epoch #{self.epoch} | Test evaluation: {acc:.2f}%")
+
   def predict(self, input: np.ndarray) -> np.ndarray:
     self.training = False
-    self._forward_propagation(predict_input=input)
-    result = self.network_layers[-1].layer_output
-    return result
+    
+    # Process in batches to save memory (prevents massive im2col allocations) when passing 10k images into model
+    batch_size = self.batch if hasattr(self, 'batch') and self.batch is not None else 256
+    results = []
+    n_samples = input.shape[0]
+    
+    for i in range(0, n_samples, batch_size):
+      batch_input = input[i:i + batch_size]
+      self._forward_propagation(predict_input=batch_input)
+      results.append(self.network_layers[-1].layer_output)
+      
+    return np.concatenate(results, axis=0)
 
   def evaluate(self) -> float:
     self.training = False
