@@ -59,6 +59,11 @@ layers = [
   Dense(10,  act_func=act.softmax)
 ]
 
+epoch_limit = 50
+gamma = 0.01**(1/epoch_limit)
+
+print(f'--- Learning rate decay = {gamma:.5f} for epoch limit of {epoch_limit} --')
+
 model = Network(
   layers=layers,
   training_set=(x_train, y_train),
@@ -66,9 +71,11 @@ model = Network(
   loss_func=LossFunction.cc_loss,
   batch=64,
   learning_rate=0.01,
+  lr_decay=gamma,
   epsilon=1e-6,
-  epoch_limit=5,
+  epoch_limit=epoch_limit,
   iteration_event_trigger=100,
+  eval_every=3
 )
 
 # -------------
@@ -88,4 +95,9 @@ print(f"\nTraining done in {elapsed:.1f}s")
 accuracy = model.evaluate()
 print(f"Test accuracy: {accuracy:.2f}%")
 
-model.save_weights(WEIGHTS_FILE, accuracy=accuracy)
+res = '...'
+while res != 'n':
+  res = input("Want to save the pre-trained weights? -> 'y' for yes 'n' for no - ")
+  if res == 'y':
+    model.save_weights(WEIGHTS_FILE, accuracy=accuracy)
+    break
