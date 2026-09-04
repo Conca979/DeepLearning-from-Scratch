@@ -5,16 +5,16 @@ from ..core import Module
 
 def _im2col_indices(C_in: int, kH: int, kW: int, out_H: int, out_W: int, stride: int):
   row_off = np.repeat(np.arange(kH), kW)
-  row_off = np.tile(row_off, C_in)  # (C_in*kH*kW,)
-  row_out = stride * np.arange(out_H)  # (out_H,)
+  row_off = np.tile(row_off, C_in)
+  row_out = stride * np.arange(out_H)
 
   col_off = np.tile(np.arange(kW), kH)
-  col_off = np.tile(col_off, C_in)  # (C_in*kH*kW,)
-  col_out = stride * np.arange(out_W)  # (out_W,)
+  col_off = np.tile(col_off, C_in) 
+  col_out = stride * np.arange(out_W) 
 
-  k = np.repeat(np.arange(C_in), kH * kW)  # (C_in*kH*kW,)
-  i = row_off[:, None] + row_out[None, :]  # (C_in*kH*kW, out_H)
-  j = col_off[:, None] + col_out[None, :]  # (C_in*kH*kW, out_W)
+  k = np.repeat(np.arange(C_in), kH * kW) 
+  i = row_off[:, None] + row_out[None, :] 
+  j = col_off[:, None] + col_out[None, :] 
   return k, i, j
 
 
@@ -22,7 +22,6 @@ def _im2col(x_pad: np.ndarray, k: np.ndarray, i: np.ndarray, j: np.ndarray,
             out_H: int, out_W: int) -> np.ndarray:
 
   col = x_pad[:, k[:, None, None], i[:, :, None], j[:, None, :]]
-  # col shape before reshape: (batch, C_in*kH*kW, out_H, out_W)
   return col.reshape(x_pad.shape[0], -1, out_H * out_W)
 
 
@@ -34,31 +33,17 @@ def _col2im(col: np.ndarray, x_shape: tuple, k: np.ndarray, i: np.ndarray,
   W_pad = W + 2 * padding
   x_pad = np.zeros((batch, C_in, H_pad, W_pad), dtype=col.dtype)
 
-  col_r = col.reshape(batch, -1, out_H,
-                      out_W)  # (batch, C_in*kH*kW, out_H, out_W)
+  col_r = col.reshape(batch, -1, out_H, out_W)
 
-  # Vectorised scatter: broadcast batch and spatial axes simultaneously.
-  # np.add.at handles duplicate indices (overlapping receptive fields).
   np.add.at(
       x_pad,
-      (np.arange(batch)[:, None, None, None],  # (batch, 1,         1,     1    )
-                      k[None, :, None, None],  # (1,     C*kH*kW,  1,     1    )
-                      i[None, :, :, None],  # (1,     C*kH*kW,  out_H, 1    )
-                      j[None, :, None, :]),  # (1,     C*kH*kW,  1,     out_W)
-                      col_r,
-              )
+      (np.arange(batch)[:, None, None, None],
+                      k[None, :, None, None],
+                      i[None, :, :, None],
+                      j[None, :, None, :]),
+                      col_r,)
   return x_pad[:, :, padding:-padding,
                padding:-padding] if padding > 0 else x_pad
-
-class InputLayer:
-  def __init__(self, x_train: np.ndarray | None):
-    self.layer_input = x_train  # (N, C, H, W)
-    self.out_shape = x_train.shape[1:]  # (C, H, W)  — spatial dims only
-    self.layer_output = None
-    self.next_layer = None
-
-  def forward(self, x: np.ndarray = None) -> None:
-    self.layer_output = x if x is not None else self.layer_input
 
 class Conv2D(Module):
   def __init__(self,
@@ -133,7 +118,6 @@ class Conv2D(Module):
     self.x_shape_cache = x.shape
 
     # 1. Pad & im2col  →  col : (batch, C_in*kH*kW, out_H*out_W)
-    # np.pad(array, pad_width) expects a tuple of (before, after) pairs for every dimension of the array:
     x_pad = (np.pad(x, ((0, 0), (0, 0), (self.padding, ) * 2, (self.padding, ) * 2)) if self.padding > 0 else x)
     col = _im2col(x_pad, self._k, self._i, self._j, self.out_H, self.out_W)
     self.col = col  # saved for kernel gradient in backward
@@ -154,10 +138,6 @@ class Conv2D(Module):
     self.layer_output = self.act_func(Z)
 
   def _bn_forward(self, Z: np.ndarray) -> np.ndarray:
-    """
-    Spatial Batch Norm: normalise over axes (0, 2, 3) — i.e. batch, H, W.
-    Uses batch statistics during training, running stats at inference.
-    """
     self.Z_pre_bn = Z  # save raw conv output for backward
     training = self.network.training if self.network else True
 
@@ -178,32 +158,26 @@ class Conv2D(Module):
     self.x_hat = x_hat
     return self.bn_gamma * x_hat + self.bn_beta
 
-  # ── Backward pass ────────────────────────────────────────────
+  # ----- Backward pass ----
 
   def compute_delta_term(self, network, targets: np.ndarray) -> None:
 
     incoming = self.next_layer.layer_delta_term  # (batch, n_f, out_H, out_W)
 
-    # ① Through activation:  dL/dZ = act'(Z) ⊙ incoming
     dZ = self.act_func(self.Z, derived=True) * incoming
 
-    # ② Through Batch Norm  →  dL/dZ_raw
     if self.use_bn:
       dZ = self._bn_backward(dZ)
 
-    # ③ Conv backward  (im2col transpose)
     batch = dZ.shape[0]
-    W_col = self.kernels.reshape(self.n_filters, -1)  # (n_f, C*kH*kW)
-    dZ_col = dZ.reshape(batch, self.n_filters, -1)  # (batch, n_f, out_H*out_W)
+    W_col = self.kernels.reshape(self.n_filters, -1)
+    dZ_col = dZ.reshape(batch, self.n_filters, -1)
 
-    # dW = Σ_batch  dZ_col[b] @ col[b]ᵀ
     dW_col = np.einsum('bfn,bcn->fc', dZ_col, self.col, optimize=True)
     self.dW = dW_col.reshape(self.kernels.shape)
 
-    # db = Σ over batch and spatial positions
     self.db = dZ_col.sum(axis=(0, 2))  # (n_filters,)
 
-    # ④ dL/d_col = W_colᵀ @ dZ_col  →  col2im  →  dL/d_input
     d_col = np.einsum('fc,bfn->bcn', W_col, dZ_col, optimize=True)
     self.layer_delta_term = _col2im(d_col, self.x_shape_cache, self._k,
                                     self._i, self._j, self.out_H, self.out_W,
