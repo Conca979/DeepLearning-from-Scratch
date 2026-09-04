@@ -9,3 +9,6 @@ test/
 # weights/
 
 docs/
+
+# unpushable dataset
+data/cifar-10-batches-py/
