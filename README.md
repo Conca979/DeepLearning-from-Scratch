@@ -29,12 +29,17 @@ The project includes fun interactive applications to test the models. Before run
    python training/cnn_train_mnist.py
    python Demo/cnn_mnist_demo.py
    ```
-2. **Dense NN MNIST Digit Recognizer:**
+2. **CNN CIFAR-10 Recognizer:**
+   ```bash
+   python training/cnn_train_cifar10.py
+   python Demo/cnn_cifar10_demo.py
+   ```
+3. **Dense NN MNIST Digit Recognizer:**
    ```bash
    python training/nn_train_mnist.py
    python Demo/nn_mnist_demo.py
    ```
-3. **CNN Fashion MNIST Recognizer:**
+4. **CNN Fashion MNIST Recognizer:**
    ```bash
    python training/cnn_train_fashion_mnist.py
    python Demo/cnn_fashin_mnist_demo.py
